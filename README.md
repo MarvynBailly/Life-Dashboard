@@ -78,10 +78,24 @@ life-dashboard/
 └── data/                     # SQLite database (gitignored)
 ```
 
+## Example
+
+![homepage](images/example.png)
+
 ## Tech Stack
 
 Python/FastAPI, SQLite, ApexCharts, Docker
 
-## Example
+## To Do
+### APIs
+- [ ] Garmin
+- [ ] Youtube
+- [ ] Monkeytype
+- [ ] Beeper
+- [ ] Toggl
 
-![homepage](images/image.png)
+### Ideas
+- [ ] Send notifications to myself using beeper api 
+- [ ] find a way to track my phone usage
+- [ ] create a way to log current irl activity via phone
+- [ ] 
