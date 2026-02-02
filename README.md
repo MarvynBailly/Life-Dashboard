@@ -82,6 +82,6 @@ life-dashboard/
 
 Python/FastAPI, SQLite, ApexCharts, Docker
 
-## License
+## Example
 
-MIT
+![homepage](images/image.png)
