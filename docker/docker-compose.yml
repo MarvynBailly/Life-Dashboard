@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  life-dashboard:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: life-dashboard
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - HOST=0.0.0.0
+      - DEBUG=false
+      - DATABASE_URL=sqlite:///./data/life_dashboard.db
+      - LASTFM_API_KEY=${LASTFM_API_KEY}
+      - LASTFM_USER=${LASTFM_USER}
+      - WAKATIME_API_KEY=${WAKATIME_API_KEY}
+      - ACTIVITYWATCH_HOST=${ACTIVITYWATCH_HOST:-http://host.docker.internal:5600}
+      - CACHE_TTL_SECONDS=900
+      - NOWPLAYING_CACHE_TTL=30
+    volumes:
+      - ../data:/app/data
+      - ../frontend:/app/frontend:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - dashboard-network
+
+volumes:
+  dashboard-data:
+    name: life-dashboard-data
+
+networks:
+  dashboard-network:
+    name: life-dashboard-network

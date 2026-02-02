@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Life Dashboard{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/static/css/styles.css?v=9">
+
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <h1>📊 Life Dashboard</h1>
+            </div>
+
+            <div class="header-stats" id="header-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-coding-time">--</span>
+                    <span class="stat-label">Coding Time</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-active-todos">--</span>
+                    <span class="stat-label">Active Tasks</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="stat-journal-streak">--</span>
+                    <span class="stat-label">Day Streak</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <select class="date-range-selector" id="date-range">
+                    <option value="last_7_days">Last 7 Days</option>
+                    <option value="last_30_days">Last 30 Days</option>
+                    <option value="last_6_months">Last 6 Months</option>
+                    <option value="last_year">Last Year</option>
+                </select>
+                <button class="btn btn-icon btn-secondary" id="refresh-btn" title="Refresh Data">
+                    🔄
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="/static/js/charts.js?v=9"></script>
+    <script src="/static/js/app.js?v=9"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

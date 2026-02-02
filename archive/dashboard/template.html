@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Life OS Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+</head>
+<body>
+    <div class="dashboard-container" id="dashboard">
+
+        <!-- Tasks Module -->
+        <div class="module-box" id="tasks-module" data-default-style="top: 20px; left: 20px; width: 500px; height: 600px;">
+            <div class="module-header" id="tasks-moduleheader">
+                <span class="drag-icon">⋮⋮</span>
+                <h2>To Do</h2>
+                <div class="module-controls">
+                    <button class="module-btn collapse-btn" onclick="toggleCollapse('tasks-module')" title="Collapse">−</button>
+                </div>
+            </div>
+            <div class="module-body">
+                <div id="todo-list">
+                    {{TODO_CONTENT}}
+                </div>
+                
+                <button id="toggle-todo-form-btn" class="btn toggle-form-btn" onclick="toggleAddTodoForm()">+ Add Task</button>
+                
+                <div id="add-todo-form" class="add-form hidden">
+                    <form id="add-todo-form-element" onsubmit="addTodoTask(event)">
+                        <div class="form-group">
+                            <input type="text" id="todo-text" name="text" placeholder="Task description..." required>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Task</button>
+                            <button type="button" class="btn btn-secondary" onclick="toggleAddTodoForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="resize-handle"></div>
+        </div>
+
+        <!-- Daily Notes Module -->
+        <div class="module-box" id="notes-module" data-default-style="top: 20px; right: 20px; width: 500px; height: 600px;">
+            <div class="module-header" id="notes-moduleheader">
+                <span class="drag-icon">⋮⋮</span>
+                <h2>Notes</h2>
+                <div class="module-controls">
+                    <button class="module-btn collapse-btn" onclick="toggleCollapse('notes-module')" title="Collapse">−</button>
+                </div>
+            </div>
+            <div class="module-body">
+                <div class="markdown-body">
+                    {{NOTES_CONTENT}}
+                </div>
+                
+                <button id="toggle-note-form-btn" class="btn toggle-form-btn" onclick="toggleAddNoteForm()">+ Add Note</button>
+                
+                <div id="add-note-form" class="add-form hidden">
+                    <form id="add-note-form-element" onsubmit="addNote(event)">
+                        <div class="form-group">
+                            <input type="text" id="note-title" name="title" placeholder="Note title..." required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="note-content" name="content" placeholder="Note content..." rows="4" required></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Add Note</button>
+                            <button type="button" class="btn btn-secondary" onclick="toggleAddNoteForm()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="resize-handle"></div>
+        </div>
+
+        <!-- Now Playing Module -->
+        <div class="module-box" id="music-module" data-default-style="bottom: 20px; left: 20px; width: 400px; height: 300px;">
+            <div class="module-header" id="music-moduleheader">
+                <span class="drag-icon">⋮⋮</span>
+                <h2>Now Playing</h2>
+                <div class="module-controls">
+                    <button class="module-btn cast-btn" onclick="castAlbumArtToBackground()" title="Cast to Background">🖼️</button>
+                    <button class="module-btn collapse-btn" onclick="toggleCollapse('music-module')" title="Collapse">−</button>
+                </div>
+            </div>
+            <div class="module-body">
+                <div id="now-playing-content" class="now-playing-content">
+                    <span class="dim">Loading…</span>
+                </div>
+            </div>
+            <div class="resize-handle"></div>
+        </div>
+
+        <!-- Daily Quotes Module -->
+        <div class="module-box" id="quotes-module" data-default-style="bottom: 20px; right: 20px; width: 400px; height: 300px;">
+            <div class="module-header" id="quotes-moduleheader">
+                <span class="drag-icon">⋮⋮</span>
+                <h2>Daily Quotes</h2>
+                <div class="module-controls">
+                    <button class="module-btn collapse-btn" onclick="toggleCollapse('quotes-module')" title="Collapse">−</button>
+                </div>
+            </div>
+            <div class="module-body">
+                <div id="quotes-container">
+                    <div class="quotes-loading">Loading quotes...</div>
+                </div>
+            </div>
+            <div class="resize-handle"></div>
+        </div>
+
+        <!-- WakaTime Stats Module -->
+        <div class="module-box" id="wakatime-module" data-default-style="top: 340px; right: 20px; width: 600px; height: 400px;">
+            <div class="module-header" id="wakatime-moduleheader">
+                <span class="drag-icon">⋮⋮</span>
+                <h2>⏱️ WakaTime Stats</h2>
+                <div class="module-controls">
+                    <button class="module-btn collapse-btn" onclick="toggleCollapse('wakatime-module')" title="Collapse">−</button>
+                </div>
+            </div>
+            <div class="module-body" style="padding: 0;">
+                <iframe 
+                    src="https://wakatime.com/share/@marvynb/5d04fe54-7b2f-4341-9c9f-5ddf905aac9a.svg" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0"
+                    style="border: none;">
+                </iframe>
+            </div>
+            <div class="resize-handle"></div>
+        </div>
+
+        <!-- Admin Controls Module -->
+        <div class="module-box" id="admin-module" data-default-style="top: 650px; left: 20px; width: 450px; height: 400px;">
+            <div class="module-header" id="admin-moduleheader">
+                <span class="drag-icon">⋮⋮</span>
+                <h2>⚙️ Admin Controls</h2>
+                <div class="module-controls">
+                    <button class="module-btn collapse-btn" onclick="toggleCollapse('admin-module')" title="Collapse">−</button>
+                </div>
+            </div>
+            <div class="module-body">
+                <div class="admin-section">
+                    <h3>Layout Management</h3>
+                    <div class="admin-buttons">
+                        <button class="btn btn-primary" onclick="saveLayoutNow()">Save Layout</button>
+                        <button class="btn btn-primary" onclick="loadLayoutNow()">Load Layout</button>
+                        <button class="btn btn-secondary" onclick="resetLayout()">🔄 Reset to Default</button>
+                    </div>
+                </div>
+                
+                <!-- <div class="admin-section">
+                    <h3>Layout Data (JSON)</h3>
+                    <textarea id="layout-json" class="admin-textarea" readonly placeholder="Layout JSON will appear here..."></textarea>
+                    <div class="admin-buttons">
+                        <button class="btn btn-secondary" onclick="copyLayoutJSON()">📋 Copy JSON</button>
+                        <button class="btn btn-secondary" onclick="downloadLayoutJSON()">⬇️ Download JSON</button>
+                    </div>
+                </div> -->
+                
+                <div id="admin-status" class="admin-status"></div>
+            </div>
+            <div class="resize-handle"></div>
+        </div>
+
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

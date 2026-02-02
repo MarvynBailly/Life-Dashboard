@@ -1,0 +1,56 @@
+{
+  "tasks-module": {
+    "top": "-3px",
+    "left": "-8px",
+    "right": "auto",
+    "bottom": "auto",
+    "width": "486px",
+    "height": "937px",
+    "collapsed": false
+  },
+  "notes-module": {
+    "top": "57px",
+    "left": "787px",
+    "right": "auto",
+    "bottom": "auto",
+    "width": "1087px",
+    "height": "1108px",
+    "collapsed": false
+  },
+  "music-module": {
+    "top": "171px",
+    "left": "1921px",
+    "right": "auto",
+    "bottom": "auto",
+    "width": "363px",
+    "height": "253px",
+    "collapsed": false
+  },
+  "quotes-module": {
+    "top": "964px",
+    "left": "12px",
+    "right": "auto",
+    "bottom": "auto",
+    "width": "396px",
+    "height": "242px",
+    "collapsed": false
+  },
+  "wakatime-module": {
+    "top": "784px",
+    "left": "1905px",
+    "right": "auto",
+    "bottom": "auto",
+    "width": "737px",
+    "height": "461px",
+    "collapsed": true
+  },
+  "admin-module": {
+    "top": "449px",
+    "left": "1361px",
+    "right": "auto",
+    "bottom": "auto",
+    "width": "250px",
+    "height": "256px",
+    "collapsed": false
+  }
+}

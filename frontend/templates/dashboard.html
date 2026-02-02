@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-grid">
+
+    <!-- Row 1: Coding Activity Charts -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">⏱️</span>
+                Coding Activity
+            </div>
+            <span class="card-subtitle">Last 7 days</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container large" id="chart-coding-activity"></div>
+        </div>
+    </div>
+
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📅</span>
+                Today's Breakdown
+            </div>
+            <span class="card-subtitle" id="today-total">0 hrs 0 mins</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container large" id="chart-today-breakdown"></div>
+        </div>
+    </div>
+
+    <!-- Row 2: Projects & Languages -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📁</span>
+                Projects
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" id="chart-projects"></div>
+            <ul class="stats-list mt-md" id="projects-list"></ul>
+        </div>
+    </div>
+
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">💻</span>
+                Languages
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" id="chart-languages"></div>
+            <ul class="stats-list mt-md" id="languages-list"></ul>
+        </div>
+    </div>
+
+    <!-- Row 3: Editors & OS -->
+    <div class="card card-third">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📝</span>
+                Editors
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container small" id="chart-editors"></div>
+        </div>
+    </div>
+
+    <div class="card card-third">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">🖥️</span>
+                Operating Systems
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="chart-container small" id="chart-os"></div>
+        </div>
+    </div>
+
+    <div class="card card-third">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📊</span>
+                Weekly Activity
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="heatmap-container" id="weekly-heatmap">
+                <!-- Heatmap will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4: Music & Todos -->
+    <div class="card card-third">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">🎵</span>
+                Now Playing
+            </div>
+            <div class="playing-indicator" id="playing-indicator" style="display: none;">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="now-playing" id="now-playing">
+                <img class="album-art" id="album-art" src="" alt="Album Art">
+                <div class="track-info">
+                    <div class="track-title" id="track-title">Not Playing</div>
+                    <div class="track-artist" id="track-artist">--</div>
+                    <div class="track-album" id="track-album"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-two-thirds">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">✅</span>
+                Active Tasks
+            </div>
+            <span class="card-subtitle" id="todo-count">0 tasks</span>
+        </div>
+        <div class="card-body">
+            <ul class="todo-list" id="todo-list">
+                <!-- Todos will be loaded here -->
+            </ul>
+            <div class="todo-input-container">
+                <input type="text" class="todo-input" id="todo-input" placeholder="Add a new task...">
+                <button class="btn btn-primary" id="add-todo-btn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 5: Notes & Journal -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📝</span>
+                Recent Notes
+            </div>
+            <button class="btn btn-secondary btn-icon" id="add-note-btn" title="Add Note">+</button>
+        </div>
+        <div class="card-body">
+            <div class="notes-list" id="notes-list">
+                <!-- Notes will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📔</span>
+                Journal
+                <span class="journal-streak-badge" id="journal-streak-badge" title="Day Streak">🔥 <span id="journal-streak-display">0</span></span>
+            </div>
+            <div class="journal-header-actions">
+                <div class="journal-today-indicator" id="journal-today-indicator" style="display: none;">
+                    <span class="indicator-dot warning"></span>
+                    <span>No entry today</span>
+                </div>
+                <button class="btn btn-primary btn-sm" id="write-journal-btn" title="Write Today's Entry">+ Write</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="journal-list" id="journal-list">
+                <!-- Journal entries will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-quarter">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">💭</span>
+                Daily Quote
+            </div>
+            <button class="btn btn-secondary btn-icon" id="refresh-quote-btn" title="New Quote">🔄</button>
+        </div>
+        <div class="card-body">
+            <div class="quote-container" id="quote-container">
+                <div class="quote-text" id="quote-text">Loading...</div>
+                <div class="quote-author" id="quote-author"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 6: Top Artists -->
+    <div class="card card-full">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">🎤</span>
+                Top Artists
+            </div>
+            <span class="card-subtitle">Last 7 days</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" id="chart-top-artists"></div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize dashboard when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboard();
+    });
+</script>
+{% endblock %}

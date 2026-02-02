@@ -1,0 +1,701 @@
+/* ========================================
+   LIFE OS DASHBOARD - DARK MODE THEME
+   ======================================== */
+
+/* Color Variables */
+:root {
+    --bg-primary: #0a0e27;
+    --bg-secondary: #151b3d;
+    --bg-tertiary: #1e2749;
+    --card-bg: rgba(30, 39, 73, 0.95);
+    --card-border: rgba(139, 92, 246, 0.3);
+    --text-primary: #e4e4e7;
+    --text-secondary: #a1a1aa;
+    --text-dim: #71717a;
+    --accent-purple: #8b5cf6;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --hover-bg: rgba(139, 92, 246, 0.1);
+    --border-radius: 12px;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Module Box (Draggable, Resizable, Collapsible) */
+.module-box {
+    position: absolute;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+    min-width: 250px;
+    min-height: 150px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.module-box.positioned {
+    opacity: 1;
+}
+
+.module-box:hover {
+    box-shadow: 0 12px 48px rgba(139, 92, 246, 0.3);
+}
+
+.module-box.collapsed .module-body {
+    display: none;
+}
+
+.module-box.collapsed .resize-handle {
+    display: none;
+}
+
+.module-box.collapsed {
+    width: auto !important;
+    height: auto !important;
+    min-width: 200px;
+    max-width: 250px;
+}
+
+/* Module Header */
+.module-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(139, 92, 246, 0.1);
+    border-bottom: 1px solid var(--card-border);
+    cursor: move;
+    user-select: none;
+    position: relative;
+}
+
+.module-header:active {
+    cursor: grabbing;
+}
+
+.drag-icon {
+    color: var(--text-dim);
+    font-size: 16px;
+    letter-spacing: -4px;
+    font-weight: bold;
+}
+
+.module-header h2 {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.module-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.module-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 18px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.module-btn:hover {
+    background: var(--hover-bg);
+    color: var(--accent-purple);
+}
+
+.cast-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Module Body */
+.module-body {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.module-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.module-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.module-body::-webkit-scrollbar-thumb {
+    background: var(--accent-purple);
+    border-radius: 4px;
+}
+
+.module-body::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-blue);
+}
+
+/* Resize Handle */
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 0%, transparent 50%, var(--accent-purple) 50%);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.resize-handle:hover {
+    opacity: 1;
+}
+
+/* ========================================
+   TODO LIST STYLES
+   ======================================== */
+
+.todo-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px;
+    margin-bottom: 8px;
+    background: rgba(30, 30, 46, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.todo-item:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--accent-purple);
+}
+
+.todo-item.checked {
+    opacity: 0.6;
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.todo-item.moved {
+    opacity: 0.4;
+    background: rgba(59, 130, 246, 0.05);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.todo-item input[type="checkbox"] {
+    margin-right: 12px;
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent-purple);
+    flex-shrink: 0;
+}
+
+.task-text {
+    flex: 1;
+    line-height: 1.5;
+    color: var(--text-primary);
+}
+
+.todo-item.checked .task-text {
+    text-decoration: line-through;
+    color: var(--text-dim);
+}
+
+.todo-item.moved .task-text {
+    text-decoration: line-through;
+    color: var(--text-dim);
+}
+
+/* Task Hierarchy (Nested Tasks) */
+.todo-item[style*="margin-left: 20px"] {
+    background: rgba(30, 30, 46, 0.4);
+    border-left: 3px solid var(--accent-blue);
+}
+
+.todo-item[style*="margin-left: 40px"] {
+    background: rgba(30, 30, 46, 0.3);
+    border-left: 3px solid var(--accent-green);
+    font-size: 0.95em;
+}
+
+/* ========================================
+   MARKDOWN / NOTES STYLES
+   ======================================== */
+
+.markdown-body {
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.markdown-body h1 {
+    font-size: 1.8em;
+    color: var(--accent-purple);
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 2px solid var(--card-border);
+}
+
+.markdown-body h2 {
+    font-size: 1.5em;
+    color: var(--text-primary);
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+.markdown-body h3 {
+    font-size: 1.2em;
+    color: var(--text-secondary);
+    margin-top: 0.8em;
+    margin-bottom: 0.4em;
+}
+
+.markdown-body p {
+    margin-bottom: 1em;
+}
+
+.markdown-body a {
+    color: var(--accent-blue);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.markdown-body a:hover {
+    color: var(--accent-purple);
+    text-decoration: underline;
+}
+
+.markdown-body code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: #fbbf24;
+    font-size: 0.9em;
+}
+
+.markdown-body pre {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+.markdown-body pre code {
+    background: none;
+    padding: 0;
+}
+
+.markdown-body blockquote {
+    border-left: 4px solid var(--accent-purple);
+    padding-left: 1em;
+    margin: 1em 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.markdown-body ul, .markdown-body ol {
+    margin-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+.markdown-body li {
+    margin-bottom: 0.3em;
+}
+
+.dim {
+    color: var(--text-dim);
+    font-style: italic;
+}
+
+/* ========================================
+   NOW PLAYING STYLES
+   ======================================== */
+
+#music-module .module-body {
+    position: relative;
+    padding: 0;
+}
+
+.now-playing-content {
+    position: relative;
+    text-align: center;
+    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(to bottom, 
+        rgba(10, 14, 39, 0.85) 0%, 
+        rgba(10, 14, 39, 0.9) 100%);
+    backdrop-filter: blur(8px);
+}
+
+.now-playing-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 
+                 0 0 20px rgba(0, 0, 0, 0.5);
+    line-height: 1.3;
+}
+
+.now-playing-artist {
+    font-size: 1.2em;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 
+                 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================
+   QUOTES STYLES
+   ======================================== */
+
+.quotes-loading {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 20px;
+    font-style: italic;
+}
+
+.quote-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-purple);
+}
+
+.quote-text {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    font-style: italic;
+}
+
+.quote-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quote-author {
+    color: var(--text-secondary);
+    font-size: 0.95em;
+}
+
+.save-quote-btn {
+    background: var(--accent-purple);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.save-quote-btn:hover {
+    background: var(--accent-blue);
+    transform: translateY(-1px);
+}
+
+.save-quote-btn.saved {
+    background: var(--accent-green);
+}
+
+/* ========================================
+   FORMS & BUTTONS
+   ======================================== */
+
+.toggle-form-btn {
+    width: 100%;
+    margin-top: 16px;
+}
+
+.btn {
+    background: var(--accent-purple);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.btn:hover {
+    background: var(--accent-blue);
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background: var(--accent-purple);
+}
+
+.btn-primary:hover {
+    background: var(--accent-blue);
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+}
+
+.btn-secondary:hover {
+    background: var(--hover-bg);
+    border-color: var(--accent-purple);
+    color: var(--text-primary);
+}
+
+.add-form {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+}
+
+.form-group {
+    margin-bottom: 12px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.95em;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.form-actions .btn {
+    flex: 1;
+}
+
+/* ========================================
+   WAKATIME STATS
+   ======================================== */
+
+#wakatime-module .module-body {
+    padding: 0;
+    overflow: hidden;
+}
+
+#wakatime-module iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+}
+
+/* ========================================
+   BACKGROUND OVERLAY (for cast feature)
+   ======================================== */
+
+#background-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 14, 39, 0.75);
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.3s;
+}
+
+.dashboard-container {
+    position: relative;
+    z-index: 10;
+}
+
+/* ========================================
+   ADMIN CONTROLS
+   ======================================== */
+
+.admin-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.admin-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 12px;
+}
+
+.admin-section h3 {
+    font-size: 1em;
+    color: var(--accent-purple);
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.admin-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.admin-buttons .btn {
+    flex: 1;
+    min-width: 120px;
+}
+
+.admin-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85em;
+    line-height: 1.4;
+    resize: vertical;
+    margin-bottom: 8px;
+}
+
+.admin-textarea:focus {
+    outline: none;
+    border-color: var(--accent-purple);
+}
+
+.admin-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.admin-status.success {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid var(--accent-green);
+    color: var(--accent-green);
+}
+
+.admin-status.error {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+
+.admin-status.info {
+    background: rgba(59, 130, 246, 0.2);
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.hidden {
+    display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .module-box {
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-container {
+        overflow-y: auto;
+        padding: 20px;
+    }
+    
+    .resize-handle {
+        display: none;
+    }
+}
