@@ -98,4 +98,4 @@ Python/FastAPI, SQLite, ApexCharts, Docker
 - [ ] Send notifications to myself using beeper api 
 - [ ] find a way to track my phone usage
 - [ ] create a way to log current irl activity via phone
-- [ ] 
+- [ ] get activity watch working

@@ -98,7 +98,7 @@ function createCodingActivityChart(containerId, data) {
             ...commonOptions.xaxis,
             type: 'category',
             categories: data.map(d => {
-                const date = new Date(d.date);
+                const date = new Date(d.date + 'T00:00:00');
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }),
             tickPlacement: 'on'
@@ -464,7 +464,7 @@ function generateWeeklyHeatmap(containerId, data) {
 
     if (data && data.length > 0) {
         data.forEach(item => {
-            const date = new Date(item.date);
+            const date = new Date(item.date + 'T00:00:00');
             const dayName = days[date.getDay() === 0 ? 6 : date.getDay() - 1];
             dayData[dayName] += item.total_seconds / 3600; // Hours
         });
