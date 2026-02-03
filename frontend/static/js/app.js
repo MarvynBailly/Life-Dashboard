@@ -282,7 +282,7 @@ async function loadNotes(append = false) {
         const notesHtml = notes.map(note => `
             <div class="note-item" onclick="viewNote(${note.id})">
                 ${note.title ? `<div class="note-title">${escapeHtml(note.title)}</div>` : ''}
-                <div class="note-preview">${escapeHtml(note.content.substring(0, 100))}${note.content.length > 100 ? '...' : ''}</div>
+                <div class="note-preview">${renderInlineMarkdown(note.content.substring(0, 150))}${note.content.length > 150 ? '...' : ''}</div>
                 <div class="note-date">${formatDate(note.note_date)}</div>
             </div>
         `).join('');
@@ -335,7 +335,7 @@ async function viewNote(noteId) {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal">
+            <div class="modal modal-wide">
                 <div class="modal-header">
                     <h3 id="note-modal-title">${note.title ? escapeHtml(note.title) : 'Note'}</h3>
                     <button class="btn btn-icon modal-close" onclick="closeModal(this)">&times;</button>
@@ -343,11 +343,20 @@ async function viewNote(noteId) {
                 <div class="modal-body">
                     <div class="note-date-display">${formatDate(note.note_date)}</div>
                     <div id="note-view-content">
-                        <div class="note-content">${escapeHtml(note.content).replace(/\n/g, '<br>')}</div>
+                        <div class="markdown-content">${renderMarkdown(note.content)}</div>
                     </div>
                     <div id="note-edit-content" style="display: none;">
                         <input type="text" class="form-input" id="edit-note-title" value="${note.title ? escapeHtml(note.title) : ''}" placeholder="Title (optional)">
-                        <textarea class="form-textarea" id="edit-note-content" rows="10">${escapeHtml(note.content)}</textarea>
+                        <div class="markdown-editor">
+                            <div class="editor-pane">
+                                <div class="pane-header">Markdown</div>
+                                <textarea class="form-textarea" id="edit-note-content">${escapeHtml(note.content)}</textarea>
+                            </div>
+                            <div class="preview-pane">
+                                <div class="pane-header">Preview</div>
+                                <div class="preview-content markdown-content" id="edit-note-preview"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -382,6 +391,7 @@ function toggleEditNote(noteId) {
     document.getElementById('note-edit-content').style.display = 'block';
     document.getElementById('note-view-actions').style.display = 'none';
     document.getElementById('note-edit-actions').style.display = 'flex';
+    setupLivePreview('edit-note-content', 'edit-note-preview');
     document.getElementById('edit-note-content')?.focus();
 }
 
@@ -420,7 +430,7 @@ async function saveEditNote(noteId, btn) {
             const modalTitle = document.getElementById('note-modal-title');
 
             if (viewContent) {
-                viewContent.innerHTML = `<div class="note-content">${escapeHtml(content).replace(/\n/g, '<br>')}</div>`;
+                viewContent.innerHTML = `<div class="markdown-content">${renderMarkdown(content)}</div>`;
             }
             if (modalTitle) {
                 modalTitle.textContent = title || 'Note';
@@ -447,14 +457,23 @@ function showAddNoteModal() {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal">
+        <div class="modal modal-wide">
             <div class="modal-header">
                 <h3>New Note</h3>
                 <button class="btn btn-icon modal-close" onclick="closeModal(this)">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="text" class="form-input" id="new-note-title" placeholder="Title (optional)">
-                <textarea class="form-textarea" id="new-note-content" placeholder="Write your note..." rows="8"></textarea>
+                <div class="markdown-editor">
+                    <div class="editor-pane">
+                        <div class="pane-header">Markdown</div>
+                        <textarea class="form-textarea" id="new-note-content" placeholder="Write your note using markdown..."></textarea>
+                    </div>
+                    <div class="preview-pane">
+                        <div class="pane-header">Preview</div>
+                        <div class="preview-content markdown-content" id="new-note-preview"></div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal(this)">Cancel</button>
@@ -464,8 +483,11 @@ function showAddNoteModal() {
     `;
     document.body.appendChild(modal);
 
-    // Focus the content textarea
-    setTimeout(() => document.getElementById('new-note-content')?.focus(), 100);
+    // Set up live preview and focus
+    setTimeout(() => {
+        setupLivePreview('new-note-content', 'new-note-preview');
+        document.getElementById('new-note-content')?.focus();
+    }, 100);
 
     // Close on backdrop click
     modal.addEventListener('click', (e) => {
@@ -652,7 +674,7 @@ async function loadJournalEntries(append = false) {
                     <span class="journal-date">${formatJournalDate(entry.entry_date)}</span>
                     ${entry.mood ? `<span class="journal-mood">${getMoodEmoji(entry.mood)}</span>` : ''}
                 </div>
-                <div class="journal-preview">${escapeHtml(entry.content.substring(0, 120))}${entry.content.length > 120 ? '...' : ''}</div>
+                <div class="journal-preview">${renderInlineMarkdown(entry.content.substring(0, 150))}${entry.content.length > 150 ? '...' : ''}</div>
             </div>
         `).join('');
 
@@ -702,17 +724,26 @@ async function viewJournalEntry(entryDate) {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal">
+            <div class="modal modal-wide">
                 <div class="modal-header">
                     <h3 id="journal-modal-title">${formatJournalDate(entry.entry_date)} ${entry.mood ? getMoodEmoji(entry.mood) : ''}</h3>
                     <button class="btn btn-icon modal-close" onclick="closeModal(this)">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div id="journal-view-content">
-                        <div class="journal-content">${escapeHtml(entry.content).replace(/\n/g, '<br>')}</div>
+                        <div class="markdown-content">${renderMarkdown(entry.content)}</div>
                     </div>
                     <div id="journal-edit-content" style="display: none;">
-                        <textarea class="form-textarea" id="edit-journal-content" rows="10">${escapeHtml(entry.content)}</textarea>
+                        <div class="markdown-editor">
+                            <div class="editor-pane">
+                                <div class="pane-header">Markdown</div>
+                                <textarea class="form-textarea" id="edit-journal-content">${escapeHtml(entry.content)}</textarea>
+                            </div>
+                            <div class="preview-pane">
+                                <div class="pane-header">Preview</div>
+                                <div class="preview-content markdown-content" id="edit-journal-preview"></div>
+                            </div>
+                        </div>
                         <div class="mood-selector mt-sm">
                             <label class="text-secondary">Mood:</label>
                             <div class="mood-options">
@@ -759,7 +790,7 @@ function showJournalModal(existingEntry = null) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal">
+        <div class="modal modal-wide">
             <div class="modal-header">
                 <h3>${isEdit ? 'Edit Journal Entry' : 'New Journal Entry'}</h3>
                 <button class="btn btn-icon modal-close" onclick="closeModal(this)">&times;</button>
@@ -769,7 +800,16 @@ function showJournalModal(existingEntry = null) {
                     <label class="text-secondary">Date:</label>
                     <input type="date" class="form-input" id="journal-date-input" value="${initialDate}" max="${today}">
                 </div>
-                <textarea class="form-textarea" id="new-journal-content" placeholder="How was your day? What's on your mind?" rows="10">${isEdit ? escapeHtml(existingEntry.content) : ''}</textarea>
+                <div class="markdown-editor">
+                    <div class="editor-pane">
+                        <div class="pane-header">Markdown</div>
+                        <textarea class="form-textarea" id="new-journal-content" placeholder="How was your day? What's on your mind? (supports markdown)">${isEdit ? escapeHtml(existingEntry.content) : ''}</textarea>
+                    </div>
+                    <div class="preview-pane">
+                        <div class="pane-header">Preview</div>
+                        <div class="preview-content markdown-content" id="new-journal-preview"></div>
+                    </div>
+                </div>
                 <div class="mood-selector mt-sm">
                     <label class="text-secondary">How are you feeling?</label>
                     <div class="mood-options">
@@ -791,12 +831,14 @@ function showJournalModal(existingEntry = null) {
     const dateInput = document.getElementById('journal-date-input');
     dateInput.addEventListener('change', async () => {
         const selectedDate = dateInput.value;
+        const contentArea = document.getElementById('new-journal-content');
+        const preview = document.getElementById('new-journal-preview');
         try {
             const res = await fetch(`/api/journal/${selectedDate}`);
             if (res.ok) {
                 const entry = await res.json();
                 if (entry && !entry.detail) {
-                    document.getElementById('new-journal-content').value = entry.content;
+                    contentArea.value = entry.content;
                     // Clear all mood buttons and set the right one
                     document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
                     if (entry.mood) {
@@ -805,9 +847,11 @@ function showJournalModal(existingEntry = null) {
                 }
             } else {
                 // No entry for this date, clear the form
-                document.getElementById('new-journal-content').value = '';
+                contentArea.value = '';
                 document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
             }
+            // Update preview after content change
+            if (preview) preview.innerHTML = renderMarkdown(contentArea.value);
         } catch (e) {
             // Ignore errors
         }
@@ -818,15 +862,23 @@ function showJournalModal(existingEntry = null) {
         .then(res => res.ok ? res.json() : null)
         .then(entry => {
             if (entry && !entry.detail) {
-                document.getElementById('new-journal-content').value = entry.content;
+                const contentArea = document.getElementById('new-journal-content');
+                const preview = document.getElementById('new-journal-preview');
+                contentArea.value = entry.content;
                 if (entry.mood) {
                     document.querySelector(`.mood-btn[data-mood="${entry.mood}"]`)?.classList.add('active');
                 }
+                // Update preview after content change
+                if (preview) preview.innerHTML = renderMarkdown(contentArea.value);
             }
         })
         .catch(() => {});
 
-    setTimeout(() => document.getElementById('new-journal-content')?.focus(), 100);
+    // Set up live preview and focus
+    setTimeout(() => {
+        setupLivePreview('new-journal-content', 'new-journal-preview');
+        document.getElementById('new-journal-content')?.focus();
+    }, 100);
 
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal(modal.querySelector('.modal-close'));
@@ -896,6 +948,7 @@ function toggleEditJournal(entryDate) {
     document.getElementById('journal-edit-content').style.display = 'block';
     document.getElementById('journal-view-actions').style.display = 'none';
     document.getElementById('journal-edit-actions').style.display = 'flex';
+    setupLivePreview('edit-journal-content', 'edit-journal-preview');
     document.getElementById('edit-journal-content')?.focus();
 }
 
@@ -933,7 +986,7 @@ async function saveEditJournal(entryDate, btn) {
             const modalTitle = document.getElementById('journal-modal-title');
 
             if (viewContent) {
-                viewContent.innerHTML = `<div class="journal-content">${escapeHtml(content).replace(/\n/g, '<br>')}</div>`;
+                viewContent.innerHTML = `<div class="markdown-content">${renderMarkdown(content)}</div>`;
             }
             if (modalTitle) {
                 modalTitle.textContent = `${formatJournalDate(entryDate)} ${mood ? getMoodEmoji(mood) : ''}`;
@@ -996,6 +1049,63 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Render markdown to HTML safely
+ */
+function renderMarkdown(text) {
+    if (!text) return '<span class="preview-placeholder">Nothing to preview</span>';
+    try {
+        // Configure marked for safety
+        marked.setOptions({
+            breaks: true,      // Convert \n to <br>
+            gfm: true,         // GitHub Flavored Markdown
+            headerIds: false,  // Don't add IDs to headers
+            mangle: false      // Don't escape email addresses
+        });
+        return marked.parse(text);
+    } catch (e) {
+        console.error('Markdown render error:', e);
+        return escapeHtml(text).replace(/\n/g, '<br>');
+    }
+}
+
+/**
+ * Render inline markdown only (for previews)
+ * Handles: bold, italic, code, strikethrough
+ */
+function renderInlineMarkdown(text) {
+    if (!text) return '';
+    // Escape HTML first
+    let html = escapeHtml(text);
+    // Bold: **text** or __text__
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    // Italic: *text* or _text_ (but not inside words)
+    html = html.replace(/\*([^\s*].*?[^\s*])\*/g, '<em>$1</em>');
+    html = html.replace(/\*([^\s*])\*/g, '<em>$1</em>');
+    // Inline code: `text`
+    html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+    // Strikethrough: ~~text~~
+    html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    return html;
+}
+
+/**
+ * Set up live preview for a markdown editor
+ */
+function setupLivePreview(textareaId, previewId) {
+    const textarea = document.getElementById(textareaId);
+    const preview = document.getElementById(previewId);
+    if (!textarea || !preview) return;
+
+    const updatePreview = () => {
+        preview.innerHTML = renderMarkdown(textarea.value);
+    };
+
+    textarea.addEventListener('input', updatePreview);
+    updatePreview(); // Initial render
 }
 
 /**
