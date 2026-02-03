@@ -525,3 +525,61 @@ function formatDuration(seconds) {
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
 }
+
+/**
+ * Create a horizontal bar chart for ActivityWatch app usage
+ */
+function createAppUsageChart(containerId, data) {
+    if (!data || data.length === 0) {
+        document.querySelector(`#${containerId}`).innerHTML = '<div class="text-center text-dim">No app usage data available</div>';
+        return null;
+    }
+
+    const topApps = data.slice(0, 8);
+
+    const options = {
+        ...commonOptions,
+        chart: {
+            ...commonOptions.chart,
+            type: 'bar',
+            height: 200
+        },
+        series: [{
+            name: 'Hours',
+            data: topApps.map(a => Math.round(a.seconds / 3600 * 10) / 10)
+        }],
+        plotOptions: {
+            bar: {
+                horizontal: true,
+                borderRadius: 4,
+                barHeight: '70%',
+                distributed: true
+            }
+        },
+        xaxis: {
+            ...commonOptions.xaxis,
+            categories: topApps.map(a => a.name)
+        },
+        yaxis: {
+            ...commonOptions.yaxis,
+            labels: {
+                ...commonOptions.yaxis.labels,
+                maxWidth: 150
+            }
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: val => `${val}h`,
+            style: {
+                fontSize: '11px'
+            }
+        },
+        legend: {
+            show: false
+        }
+    };
+
+    const chart = new ApexCharts(document.querySelector(`#${containerId}`), options);
+    chart.render();
+    return chart;
+}

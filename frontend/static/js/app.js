@@ -20,6 +20,7 @@ async function initDashboard() {
     await Promise.all([
         loadStats(),
         loadWakaTimeData(),
+        loadActivityWatch(),
         loadTodos(),
         loadNotes(),
         loadNowPlaying(),
@@ -88,6 +89,7 @@ async function refreshAllData() {
     await Promise.all([
         loadStats(),
         loadWakaTimeData(),
+        loadActivityWatch(),
         loadTodos(),
         loadNotes(),
         loadNowPlaying(),
@@ -174,6 +176,90 @@ async function loadWakaTimeData(range = 'last_7_days') {
     } catch (error) {
         console.error('Error loading WakaTime data:', error);
     }
+}
+
+/**
+ * Load ActivityWatch data and render charts
+ */
+async function loadActivityWatch() {
+    try {
+        // Load summary (includes apps and AFK data)
+        const summaryResponse = await fetch('/api/activitywatch/summary?hours=24');
+        const summary = await summaryResponse.json();
+
+        if (summary && !summary.error) {
+            // Update app usage chart
+            if (charts.appUsage) charts.appUsage.destroy();
+            charts.appUsage = createAppUsageChart('chart-app-usage', summary.apps);
+            updateAppUsageList('app-usage-list', summary.apps);
+
+            // Update screen time stats
+            const activeDisplay = document.getElementById('aw-active-display');
+            const afkDisplay = document.getElementById('aw-afk-display');
+            const activeTime = document.getElementById('aw-active-time');
+            const activeBar = document.getElementById('aw-active-bar');
+
+            if (activeDisplay) activeDisplay.textContent = summary.total_active_text || '0 hrs 0 mins';
+            if (afkDisplay) afkDisplay.textContent = summary.afk_text || '0 hrs 0 mins';
+            if (activeTime) activeTime.textContent = summary.total_active_text || '--';
+
+            // Calculate percentage for progress bar
+            const totalTime = summary.total_active_time + summary.afk_time;
+            if (totalTime > 0 && activeBar) {
+                const activePercent = (summary.total_active_time / totalTime) * 100;
+                activeBar.style.width = `${activePercent}%`;
+            }
+        } else {
+            // Show error state
+            const chartContainer = document.getElementById('chart-app-usage');
+            if (chartContainer) {
+                chartContainer.innerHTML = '<div class="text-center text-dim">ActivityWatch not available<br><small>Make sure it\'s running on localhost:5600</small></div>';
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading ActivityWatch data:', error);
+        const chartContainer = document.getElementById('chart-app-usage');
+        if (chartContainer) {
+            chartContainer.innerHTML = '<div class="text-center text-dim">ActivityWatch not available<br><small>Make sure it\'s running on localhost:5600</small></div>';
+        }
+    }
+}
+
+/**
+ * Update app usage list with items
+ */
+function updateAppUsageList(listId, items) {
+    const list = document.querySelector(`#${listId}`);
+    if (!list || !items || items.length === 0) {
+        if (list) list.innerHTML = '';
+        return;
+    }
+
+    const topItems = items.slice(0, 5);
+    const chartColors = ['#3b82f6', '#14b8a6', '#22c55e', '#eab308', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+    list.innerHTML = topItems.map((item, index) => `
+        <li class="stats-list-item">
+            <span class="stats-list-label">
+                <span class="stats-list-dot" style="background-color: ${chartColors[index % chartColors.length]}"></span>
+                <span class="stats-list-name">${escapeHtml(item.name)}</span>
+            </span>
+            <span class="stats-list-value">${item.text || formatAppDuration(item.seconds)}</span>
+        </li>
+    `).join('');
+}
+
+/**
+ * Format seconds for app usage display
+ */
+function formatAppDuration(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
 }
 
 /**

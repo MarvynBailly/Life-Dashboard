@@ -20,7 +20,7 @@ class ActivityWatchClient:
     def client(self) -> httpx.AsyncClient:
         """Get or create async HTTP client."""
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=10.0)
+            self._client = httpx.AsyncClient(timeout=10.0, follow_redirects=True)
         return self._client
 
     async def close(self):

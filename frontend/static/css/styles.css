@@ -1414,3 +1414,55 @@ a:hover {
     min-height: 150px;
   }
 }
+
+/* ============================================================================
+   ActivityWatch / Screen Time Styles
+   ============================================================================ */
+
+.screen-time-stats {
+  display: flex;
+  gap: var(--spacing-xl);
+  justify-content: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.screen-time-item {
+  text-align: center;
+}
+
+.screen-time-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.screen-time-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.screen-time-bar {
+  padding: 0 var(--spacing-md);
+}
+
+.screen-time-legend {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-lg);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}

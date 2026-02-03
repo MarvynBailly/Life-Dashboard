@@ -96,6 +96,52 @@
         </div>
     </div>
 
+    <!-- Row 3.5: ActivityWatch App Usage -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">👁️</span>
+                App Usage
+            </div>
+            <span class="card-subtitle">Last 24 hours</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container" id="chart-app-usage"></div>
+            <ul class="stats-list mt-md" id="app-usage-list"></ul>
+        </div>
+    </div>
+
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">⏰</span>
+                Screen Time
+            </div>
+            <span class="card-subtitle" id="aw-active-time">--</span>
+        </div>
+        <div class="card-body">
+            <div class="screen-time-stats">
+                <div class="screen-time-item">
+                    <div class="screen-time-label">Active Time</div>
+                    <div class="screen-time-value text-success" id="aw-active-display">--</div>
+                </div>
+                <div class="screen-time-item">
+                    <div class="screen-time-label">Away (AFK)</div>
+                    <div class="screen-time-value text-warning" id="aw-afk-display">--</div>
+                </div>
+            </div>
+            <div class="screen-time-bar mt-md">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" id="aw-active-bar" style="width: 0%; background-color: var(--accent-green);"></div>
+                </div>
+                <div class="screen-time-legend mt-sm">
+                    <span class="legend-item"><span class="legend-dot" style="background: var(--accent-green);"></span> Active</span>
+                    <span class="legend-item"><span class="legend-dot" style="background: var(--accent-yellow);"></span> AFK</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Row 4: Music & Todos -->
     <div class="card card-third">
         <div class="card-header">
