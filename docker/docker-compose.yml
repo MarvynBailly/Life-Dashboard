@@ -18,11 +18,14 @@ services:
       - LASTFM_USER=${LASTFM_USER}
       - WAKATIME_API_KEY=${WAKATIME_API_KEY}
       - ACTIVITYWATCH_HOST=${ACTIVITYWATCH_HOST:-http://host.docker.internal:5600}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_USERNAME=${GITHUB_USERNAME}
       - CACHE_TTL_SECONDS=900
       - NOWPLAYING_CACHE_TTL=30
     volumes:
       - ../data:/app/data
       - ../frontend:/app/frontend:ro
+      - ../backend:/app/backend:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s

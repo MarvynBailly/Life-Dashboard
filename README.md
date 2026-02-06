@@ -5,6 +5,8 @@ A personal productivity dashboard with a WakaTime-inspired dark theme.
 ## Features
 
 - **Coding Stats** - WakaTime integration (time by project, language, editor)
+- **App Usage** - ActivityWatch integration (screen time, app tracking)
+- **GitHub** - Repository list and contribution activity chart
 - **Music** - Last.fm now playing and top artists
 - **Todos** - Task management with hierarchy
 - **Notes** - Quick notes with pagination
@@ -27,6 +29,7 @@ docker-compose -f docker/docker-compose.yml up -d
 
 - **WakaTime**: https://wakatime.com/settings/api-key
 - **Last.fm**: https://www.last.fm/api/account/create
+- **GitHub**: https://github.com/settings/tokens (needs `repo` scope for private repos)
 
 ## Local Development
 
@@ -44,6 +47,7 @@ life-dashboard/
 │   │   ├── lastfm.py         # Last.fm integration
 │   │   ├── wakatime.py       # WakaTime integration
 │   │   ├── activitywatch.py  # ActivityWatch integration
+│   │   ├── github.py         # GitHub integration
 │   │   └── quotes.py         # Quotes API
 │   ├── database/
 │   │   ├── models.py         # SQLAlchemy models
@@ -88,6 +92,7 @@ Python/FastAPI, SQLite, ApexCharts, Docker
 
 ## To Do
 ### APIs
+- [x] GitHub
 - [ ] Garmin
 - [ ] Youtube
 - [ ] Monkeytype

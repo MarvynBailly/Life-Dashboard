@@ -664,6 +664,96 @@ a:hover {
 .heatmap-cell[data-level="5"] { background-color: var(--accent-blue); }
 
 /* ============================================================================
+   Timeline (Today's Breakdown)
+   ============================================================================ */
+
+.timeline-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  min-height: 150px;
+}
+
+.timeline-header {
+  padding-left: 100px;
+}
+
+.timeline-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  padding-bottom: var(--spacing-xs);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.timeline-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  height: 28px;
+}
+
+.timeline-label {
+  width: 100px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+.timeline-label-name {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65px;
+}
+
+.timeline-label-time {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-family: monospace;
+}
+
+.timeline-track {
+  flex: 1;
+  height: 20px;
+  background-color: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline-block {
+  position: absolute;
+  top: 2px;
+  height: 16px;
+  border-radius: 2px;
+  min-width: 3px;
+  opacity: 0.9;
+  transition: opacity var(--transition-fast);
+}
+
+.timeline-block:hover {
+  opacity: 1;
+}
+
+.timeline-empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: var(--spacing-lg);
+}
+
+/* ============================================================================
    Buttons
    ============================================================================ */
 

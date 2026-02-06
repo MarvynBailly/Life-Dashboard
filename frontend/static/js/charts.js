@@ -150,8 +150,12 @@ function createTodayBreakdownChart(containerId, data) {
     const hourlyData = Array(24).fill(0);
     if (data && data.length > 0) {
         data.forEach(item => {
-            const hour = new Date(item.timestamp * 1000).getHours();
-            hourlyData[hour] += item.duration / 60; // Convert to minutes
+            // WakaTime uses 'time' for timestamp, ActivityWatch uses 'timestamp'
+            const timestamp = item.time || item.timestamp;
+            if (timestamp) {
+                const hour = new Date(timestamp * 1000).getHours();
+                hourlyData[hour] += item.duration / 60; // Convert to minutes
+            }
         });
     }
 
@@ -524,6 +528,114 @@ function formatDuration(seconds) {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     return `${hours}h ${minutes}m`;
+}
+
+/**
+ * Render GitHub repos as a styled list (no chart needed)
+ */
+function createGitHubReposChart(containerId, data) {
+    const container = document.querySelector(`#${containerId}`);
+    if (!container) return null;
+
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div class="text-center text-dim">No GitHub repo data available</div>';
+        return null;
+    }
+
+    const topRepos = data.slice(0, 8);
+
+    container.innerHTML = topRepos.map((repo, index) => `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1f2937;">
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                <span class="stats-list-dot" style="background-color: ${chartColors[index % chartColors.length]}; flex-shrink: 0;"></span>
+                <span style="color: #e4e7eb; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.length > 0 ? escapeHtml(repo.name) : repo.name}</span>
+                ${repo.private ? '<span style="font-size: 10px; color: #6b7280; background: #1f2937; padding: 1px 5px; border-radius: 3px;">private</span>' : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0; font-size: 12px; color: #9ca3af;">
+                <span style="color: #9ca3af;">${repo.language || ''}</span>
+                ${repo.stars > 0 ? '<span>&#9733; ' + repo.stars + '</span>' : ''}
+                ${repo.forks > 0 ? '<span>&#128259; ' + repo.forks + '</span>' : ''}
+            </div>
+        </div>
+    `).join('');
+
+    // Return a fake chart object with a destroy method for consistency
+    return { destroy: () => { container.innerHTML = ''; } };
+}
+
+/**
+ * Create an area chart for GitHub contributions (daily commits)
+ */
+function createGitHubContributionsChart(containerId, data) {
+    if (!data || data.length === 0) {
+        document.querySelector(`#${containerId}`).innerHTML = '<div class="text-center text-dim">No contribution data available</div>';
+        return null;
+    }
+
+    const options = {
+        ...commonOptions,
+        chart: {
+            ...commonOptions.chart,
+            type: 'area',
+            height: 280
+        },
+        series: [{
+            name: 'Commits',
+            data: data.map(d => d.commits)
+        }],
+        xaxis: {
+            ...commonOptions.xaxis,
+            type: 'category',
+            categories: data.map(d => {
+                const date = new Date(d.date + 'T00:00:00');
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }),
+            tickAmount: 10,
+            labels: {
+                ...commonOptions.xaxis.labels,
+                rotate: -45,
+                rotateAlways: false
+            }
+        },
+        yaxis: {
+            ...commonOptions.yaxis,
+            title: {
+                text: 'Commits',
+                style: {
+                    color: '#9ca3af'
+                }
+            },
+            min: 0,
+            forceNiceScale: true
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 3
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        colors: ['#22c55e'],
+        dataLabels: {
+            enabled: false
+        },
+        markers: {
+            size: 3,
+            hover: {
+                size: 5
+            }
+        }
+    };
+
+    const chart = new ApexCharts(document.querySelector(`#${containerId}`), options);
+    chart.render();
+    return chart;
 }
 
 /**

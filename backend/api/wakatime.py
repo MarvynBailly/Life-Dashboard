@@ -114,6 +114,79 @@ class WakaTimeClient:
             return data["data"]
         return None
 
+    async def get_heartbeats(self, date: datetime = None) -> Optional[List[Dict]]:
+        """
+        Get heartbeats for a specific date (includes language data).
+
+        Args:
+            date: Date to get heartbeats for (default: today)
+
+        Returns:
+            List of heartbeats or None
+        """
+        if not date:
+            date = datetime.now()
+
+        params = {"date": date.strftime("%Y-%m-%d")}
+        data = await self._request("users/current/heartbeats", params)
+
+        if data and "data" in data:
+            return self._process_heartbeats_to_durations(data["data"])
+        return None
+
+    def _process_heartbeats_to_durations(self, heartbeats: List[Dict]) -> List[Dict]:
+        """
+        Process heartbeats into duration blocks grouped by language.
+        Heartbeats within 15 minutes of each other are merged into sessions.
+        """
+        if not heartbeats:
+            return []
+
+        # Sort by time
+        sorted_hb = sorted(heartbeats, key=lambda x: x.get("time", 0))
+
+        # Group into sessions (heartbeats within 15 min gap)
+        sessions = []
+        current_session = None
+        gap_threshold = 15 * 60  # 15 minutes in seconds
+
+        for hb in sorted_hb:
+            hb_time = hb.get("time", 0)
+            hb_lang = hb.get("language") or "Other"
+
+            if current_session is None:
+                current_session = {
+                    "time": hb_time,
+                    "language": hb_lang,
+                    "end_time": hb_time
+                }
+            elif (hb_time - current_session["end_time"] <= gap_threshold and
+                  hb_lang == current_session["language"]):
+                # Extend current session
+                current_session["end_time"] = hb_time
+            else:
+                # Save current session and start new one
+                current_session["duration"] = max(
+                    current_session["end_time"] - current_session["time"],
+                    60  # Minimum 1 minute
+                )
+                sessions.append(current_session)
+                current_session = {
+                    "time": hb_time,
+                    "language": hb_lang,
+                    "end_time": hb_time
+                }
+
+        # Don't forget the last session
+        if current_session:
+            current_session["duration"] = max(
+                current_session["end_time"] - current_session["time"],
+                60
+            )
+            sessions.append(current_session)
+
+        return sessions
+
     async def get_projects(self, range: str = "last_7_days") -> Optional[List[Dict]]:
         """Get project breakdown for a time range."""
         stats = await self.get_stats(range)

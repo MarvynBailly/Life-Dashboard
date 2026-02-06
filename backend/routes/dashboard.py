@@ -10,8 +10,8 @@ from ..database.crud import (
     get_db, get_active_todos, get_notes, get_journal_streak,
     get_layout, save_layout
 )
-from ..api import WakaTimeClient, ActivityWatchClient, LastFMClient, QuotesClient
-from ..services.cache import get_cached_or_fetch
+from ..api import WakaTimeClient, ActivityWatchClient, LastFMClient, QuotesClient, GitHubClient
+from ..services.cache import get_cached_or_fetch, cache
 
 settings = get_settings()
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -106,6 +106,42 @@ async def get_wakatime_summaries(days: int = Query(7, ge=1, le=30)):
         await client.close()
 
 
+@router.get("/api/wakatime/durations")
+async def get_wakatime_durations(date_str: Optional[str] = Query(None, alias="date")):
+    """Get WakaTime coding durations for a specific date (default: today)."""
+    client = WakaTimeClient()
+    try:
+        target_date = datetime.strptime(date_str, "%Y-%m-%d") if date_str else datetime.now()
+        cache_key = f"durations_{target_date.strftime('%Y-%m-%d')}"
+
+        durations = await get_cached_or_fetch(
+            "wakatime", cache_key,
+            lambda: client.get_durations(target_date),
+            ttl_seconds=settings.cache_ttl_seconds
+        )
+        return durations or []
+    finally:
+        await client.close()
+
+
+@router.get("/api/wakatime/heartbeats")
+async def get_wakatime_heartbeats(date_str: Optional[str] = Query(None, alias="date")):
+    """Get WakaTime heartbeats processed into language-based durations (default: today)."""
+    client = WakaTimeClient()
+    try:
+        target_date = datetime.strptime(date_str, "%Y-%m-%d") if date_str else datetime.now()
+        cache_key = f"heartbeats_{target_date.strftime('%Y-%m-%d')}"
+
+        heartbeats = await get_cached_or_fetch(
+            "wakatime", cache_key,
+            lambda: client.get_heartbeats(target_date),
+            ttl_seconds=settings.cache_ttl_seconds
+        )
+        return heartbeats or []
+    finally:
+        await client.close()
+
+
 # =============================================================================
 # ActivityWatch Endpoints
 # =============================================================================
@@ -128,6 +164,20 @@ async def get_activitywatch_summary(hours: int = Query(24, ge=1, le=168)):
         await client.close()
 
 
+@router.post("/api/cache/clear")
+async def clear_cache(api_name: Optional[str] = Query(None)):
+    """Clear cached data. Optionally specify api_name to clear only that API's cache."""
+    if api_name:
+        cache.invalidate(api_name)
+        return {"status": "cleared", "api": api_name}
+    else:
+        cache.invalidate("activitywatch")
+        cache.invalidate("wakatime")
+        cache.invalidate("lastfm")
+        cache.invalidate("github")
+        return {"status": "cleared", "api": "all"}
+
+
 @router.get("/api/activitywatch/apps")
 async def get_activitywatch_apps(hours: int = Query(24, ge=1, le=168)):
     """Get ActivityWatch application usage."""
@@ -142,6 +192,40 @@ async def get_activitywatch_apps(hours: int = Query(24, ge=1, le=168)):
             ttl_seconds=settings.cache_ttl_seconds
         )
         return activity or {"apps": []}
+    finally:
+        await client.close()
+
+
+# =============================================================================
+# GitHub Endpoints
+# =============================================================================
+
+@router.get("/api/github/repos")
+async def get_github_repos(per_page: int = Query(10, ge=1, le=30)):
+    """Get GitHub repositories for the authenticated user."""
+    client = GitHubClient()
+    try:
+        repos = await get_cached_or_fetch(
+            "github", f"repos_{per_page}",
+            lambda: client.get_user_repos(per_page),
+            ttl_seconds=settings.cache_ttl_seconds
+        )
+        return repos or []
+    finally:
+        await client.close()
+
+
+@router.get("/api/github/contributions")
+async def get_github_contributions(days: int = Query(30, ge=7, le=90)):
+    """Get GitHub contribution activity (daily commit counts)."""
+    client = GitHubClient()
+    try:
+        contributions = await get_cached_or_fetch(
+            "github", f"contributions_{days}d",
+            lambda: client.get_contributions(days),
+            ttl_seconds=settings.cache_ttl_seconds
+        )
+        return contributions or {"daily": [], "total_commits": 0, "days": days}
     finally:
         await client.close()
 

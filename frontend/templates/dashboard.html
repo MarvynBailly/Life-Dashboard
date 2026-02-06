@@ -26,7 +26,17 @@
             <span class="card-subtitle" id="today-total">0 hrs 0 mins</span>
         </div>
         <div class="card-body">
-            <div class="chart-container large" id="chart-today-breakdown"></div>
+            <div class="timeline-container" id="today-timeline">
+                <div class="timeline-header">
+                    <div class="timeline-axis">
+                        <span>12a</span><span>3a</span><span>6a</span><span>9a</span>
+                        <span>12p</span><span>3p</span><span>6p</span><span>9p</span><span>12a</span>
+                    </div>
+                </div>
+                <div class="timeline-rows" id="timeline-rows">
+                    <div class="timeline-empty">No coding activity yet today</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -139,6 +149,33 @@
                     <span class="legend-item"><span class="legend-dot" style="background: var(--accent-yellow);"></span> AFK</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Row 3.75: GitHub -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">&#128025;</span>
+                GitHub Repos
+            </div>
+            <span class="card-subtitle">Recently updated</span>
+        </div>
+        <div class="card-body">
+            <div id="chart-github-repos"></div>
+        </div>
+    </div>
+
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">&#128200;</span>
+                GitHub Contributions
+            </div>
+            <span class="card-subtitle" id="github-total-commits">0 commits</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-container large" id="chart-github-contributions"></div>
         </div>
     </div>
 

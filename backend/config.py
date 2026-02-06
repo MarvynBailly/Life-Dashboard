@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # ActivityWatch
     activitywatch_host: str = "http://localhost:5600"
 
+    # GitHub
+    github_token: str = ""
+    github_username: str = ""
+
     # Cache TTL (seconds)
     cache_ttl_seconds: int = 900  # 15 minutes
     nowplaying_cache_ttl: int = 30  # 30 seconds

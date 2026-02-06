@@ -21,6 +21,7 @@ async function initDashboard() {
         loadStats(),
         loadWakaTimeData(),
         loadActivityWatch(),
+        loadGitHubData(),
         loadTodos(),
         loadNotes(),
         loadNowPlaying(),
@@ -90,6 +91,7 @@ async function refreshAllData() {
         loadStats(),
         loadWakaTimeData(),
         loadActivityWatch(),
+        loadGitHubData(),
         loadTodos(),
         loadNotes(),
         loadNowPlaying(),
@@ -169,9 +171,20 @@ async function loadWakaTimeData(range = 'last_7_days') {
             }
         }
 
-        // Create today breakdown chart (placeholder - needs duration API)
-        if (charts.todayBreakdown) charts.todayBreakdown.destroy();
-        charts.todayBreakdown = createTodayBreakdownChart('chart-today-breakdown', []);
+        // Load today's heartbeats for timeline (includes language data)
+        const heartbeatsResponse = await fetch('/api/wakatime/heartbeats');
+        const heartbeats = await heartbeatsResponse.json();
+
+        // Create the timeline visualization
+        createTodayTimeline('timeline-rows', heartbeats);
+
+        // Calculate today's total from heartbeats data
+        if (heartbeats && heartbeats.length > 0) {
+            const totalSeconds = heartbeats.reduce((sum, item) => sum + (item.duration || 0), 0);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            document.getElementById('today-total').textContent = `${hours} hrs ${minutes} mins`;
+        }
 
     } catch (error) {
         console.error('Error loading WakaTime data:', error);
@@ -224,6 +237,78 @@ async function loadActivityWatch() {
             chartContainer.innerHTML = '<div class="text-center text-dim">ActivityWatch not available<br><small>Make sure it\'s running on localhost:5600</small></div>';
         }
     }
+}
+
+/**
+ * Load GitHub data and render charts
+ */
+async function loadGitHubData() {
+    try {
+        const [reposResponse, contributionsResponse] = await Promise.all([
+            fetch('/api/github/repos?per_page=10'),
+            fetch('/api/github/contributions?days=30')
+        ]);
+
+        const repos = await reposResponse.json();
+        const contributions = await contributionsResponse.json();
+
+        // Repos chart and list
+        if (repos && repos.length > 0) {
+            if (charts.githubRepos) charts.githubRepos.destroy();
+            charts.githubRepos = createGitHubReposChart('chart-github-repos', repos);
+        } else {
+            const reposContainer = document.getElementById('chart-github-repos');
+            if (reposContainer) {
+                reposContainer.innerHTML = '<div class="text-center text-dim">GitHub not configured<br><small>Set GITHUB_TOKEN to enable</small></div>';
+            }
+        }
+
+        // Contributions chart
+        if (contributions && contributions.daily && contributions.daily.length > 0) {
+            if (charts.githubContributions) charts.githubContributions.destroy();
+            charts.githubContributions = createGitHubContributionsChart('chart-github-contributions', contributions.daily);
+
+            const totalEl = document.getElementById('github-total-commits');
+            if (totalEl) {
+                totalEl.textContent = `${contributions.total_commits} commits (${contributions.days}d)`;
+            }
+        } else {
+            const contribContainer = document.getElementById('chart-github-contributions');
+            if (contribContainer) {
+                contribContainer.innerHTML = '<div class="text-center text-dim">GitHub not configured<br><small>Set GITHUB_TOKEN and GITHUB_USERNAME to enable</small></div>';
+            }
+        }
+
+    } catch (error) {
+        console.error('Error loading GitHub data:', error);
+        const reposContainer = document.getElementById('chart-github-repos');
+        if (reposContainer) {
+            reposContainer.innerHTML = '<div class="text-center text-dim">GitHub not available</div>';
+        }
+    }
+}
+
+/**
+ * Update GitHub repos list
+ */
+function updateGitHubReposList(listId, repos) {
+    const list = document.querySelector(`#${listId}`);
+    if (!list || !repos || repos.length === 0) {
+        if (list) list.innerHTML = '';
+        return;
+    }
+
+    const topRepos = repos.slice(0, 5);
+    list.innerHTML = topRepos.map((repo, index) => `
+        <li class="stats-list-item">
+            <span class="stats-list-label">
+                <span class="stats-list-dot" style="background-color: ${chartColors[index % chartColors.length]}"></span>
+                <span class="stats-list-name">${escapeHtml(repo.name)}</span>
+                ${repo.private ? '<span class="text-dim" style="font-size: 0.7em; margin-left: 4px;">private</span>' : ''}
+            </span>
+            <span class="stats-list-value">${repo.language || 'N/A'}</span>
+        </li>
+    `).join('');
 }
 
 /**
@@ -1159,12 +1244,15 @@ function renderMarkdown(text) {
 
 /**
  * Render inline markdown only (for previews)
- * Handles: bold, italic, code, strikethrough
+ * Handles: headers, bold, italic, code, strikethrough
  */
 function renderInlineMarkdown(text) {
     if (!text) return '';
     // Escape HTML first
     let html = escapeHtml(text);
+    // Headers: # text -> bold (strip the # symbols for preview)
+    html = html.replace(/^#{1,6}\s+(.+?)$/gm, '<strong>$1</strong>');
+    html = html.replace(/\s#{1,6}\s+/g, ' '); // Handle mid-text headers
     // Bold: **text** or __text__
     html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
@@ -1211,4 +1299,111 @@ function formatDate(dateString) {
         day: 'numeric',
         year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
     });
+}
+
+/**
+ * Create a WakaTime-style timeline visualization for today's coding activity
+ */
+function createTodayTimeline(containerId, durations) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // If no data, show empty message
+    if (!durations || durations.length === 0) {
+        container.innerHTML = '<div class="timeline-empty">No coding activity yet today</div>';
+        return;
+    }
+
+    // Color palette for languages
+    const colors = [
+        '#3b82f6', // Blue
+        '#8b5cf6', // Purple
+        '#14b8a6', // Teal
+        '#22c55e', // Green
+        '#eab308', // Yellow
+        '#f97316', // Orange
+        '#ec4899', // Pink
+        '#06b6d4', // Cyan
+    ];
+
+    // Group durations by language and calculate totals
+    const languageData = {};
+    durations.forEach(item => {
+        const lang = item.language || 'Other';
+        if (!languageData[lang]) {
+            languageData[lang] = {
+                totalSeconds: 0,
+                blocks: []
+            };
+        }
+        languageData[lang].totalSeconds += item.duration || 0;
+        languageData[lang].blocks.push({
+            start: item.time,
+            duration: item.duration
+        });
+    });
+
+    // Sort languages by total time (descending)
+    const sortedLanguages = Object.entries(languageData)
+        .sort((a, b) => b[1].totalSeconds - a[1].totalSeconds)
+        .slice(0, 8); // Show top 8 languages
+
+    // Get today's date boundaries (midnight to midnight)
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+    const todayEnd = todayStart + 86400; // 24 hours in seconds
+
+    // Build timeline HTML
+    let html = '';
+    sortedLanguages.forEach(([lang, data], index) => {
+        const color = colors[index % colors.length];
+        const hours = Math.floor(data.totalSeconds / 3600);
+        const minutes = Math.floor((data.totalSeconds % 3600) / 60);
+        const timeStr = hours > 0 ? `${hours}:${minutes.toString().padStart(2, '0')}` : `${minutes}:00`;
+
+        html += `
+            <div class="timeline-row">
+                <div class="timeline-label">
+                    <span class="timeline-label-name" title="${escapeHtml(lang)}">${escapeHtml(lang)}</span>
+                    <span class="timeline-label-time">${timeStr}</span>
+                </div>
+                <div class="timeline-track">
+        `;
+
+        // Add blocks for each coding session
+        data.blocks.forEach(block => {
+            // Calculate position as percentage of day
+            const startPercent = Math.max(0, ((block.start - todayStart) / 86400) * 100);
+            const widthPercent = Math.max(0.5, (block.duration / 86400) * 100); // Min 0.5% width for visibility
+
+            // Only show blocks that fall within today
+            if (startPercent < 100 && startPercent >= 0) {
+                html += `<div class="timeline-block" style="left: ${startPercent}%; width: ${widthPercent}%; background-color: ${color};" title="${escapeHtml(lang)}: ${formatTimelineTooltip(block.start, block.duration)}"></div>`;
+            }
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+/**
+ * Format tooltip for timeline blocks
+ */
+function formatTimelineTooltip(startTimestamp, durationSeconds) {
+    const startDate = new Date(startTimestamp * 1000);
+    const hours = startDate.getHours();
+    const minutes = startDate.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 || 12;
+    const startTime = `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+
+    const durMins = Math.round(durationSeconds / 60);
+    const durStr = durMins >= 60 ? `${Math.floor(durMins / 60)}h ${durMins % 60}m` : `${durMins}m`;
+
+    return `${startTime} (${durStr})`;
 }

@@ -155,7 +155,7 @@ class ActivityWatchClient:
 
         events = await self.get_events(afk_bucket, start, end)
         if events:
-            return self._calculate_afk_stats(events)
+            return self._calculate_afk_stats(events, start, end)
         return None
 
     async def get_productivity_summary(self, start: datetime = None,
@@ -169,13 +169,17 @@ class ActivityWatchClient:
         if not window_activity:
             return None
 
+        # Use AFK watcher for actual screen time (not the sum of app durations which can overlap)
+        active_seconds = afk_activity.get("active_seconds", 0) if afk_activity else 0
+        afk_seconds = afk_activity.get("afk_seconds", 0) if afk_activity else 0
+
         return {
             "apps": window_activity.get("apps", []),
-            "total_active_time": window_activity.get("total_seconds", 0),
-            "total_active_text": self._format_duration(window_activity.get("total_seconds", 0)),
-            "afk_time": afk_activity.get("afk_seconds", 0) if afk_activity else 0,
-            "afk_text": self._format_duration(afk_activity.get("afk_seconds", 0)) if afk_activity else "0 hrs 0 mins",
-            "active_time": afk_activity.get("active_seconds", 0) if afk_activity else window_activity.get("total_seconds", 0),
+            "total_active_time": active_seconds,
+            "total_active_text": self._format_duration(active_seconds),
+            "afk_time": afk_seconds,
+            "afk_text": self._format_duration(afk_seconds),
+            "active_time": active_seconds,
         }
 
     def _format_app_activity(self, events: List) -> Dict:
@@ -199,14 +203,42 @@ class ActivityWatchClient:
             "total_text": self._format_duration(total_seconds)
         }
 
-    def _calculate_afk_stats(self, events: List) -> Dict:
-        """Calculate AFK statistics from events."""
+    def _calculate_afk_stats(self, events: List, start: datetime = None, end: datetime = None) -> Dict:
+        """Calculate AFK statistics from events, clipping to time range."""
         afk_seconds = 0
         active_seconds = 0
+
+        # Convert to timestamps for comparison
+        start_ts = start.timestamp() if start else None
+        end_ts = end.timestamp() if end else None
 
         for event in events:
             duration = event.get("duration", 0)
             status = event.get("data", {}).get("status", "")
+
+            # Get event timestamp and parse it
+            event_time = event.get("timestamp")
+            if event_time:
+                try:
+                    # Parse ISO format timestamp
+                    if isinstance(event_time, str):
+                        # Handle various ISO formats
+                        event_time = event_time.replace("Z", "+00:00")
+                        from datetime import timezone
+                        event_dt = datetime.fromisoformat(event_time)
+                        event_ts = event_dt.timestamp()
+                    else:
+                        event_ts = event_time
+
+                    event_end_ts = event_ts + duration
+
+                    # Clip event to query time range
+                    if start_ts and end_ts:
+                        clipped_start = max(event_ts, start_ts)
+                        clipped_end = min(event_end_ts, end_ts)
+                        duration = max(0, clipped_end - clipped_start)
+                except (ValueError, TypeError):
+                    pass  # Use original duration if parsing fails
 
             if status == "afk":
                 afk_seconds += duration
