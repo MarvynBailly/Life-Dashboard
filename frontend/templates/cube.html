@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Cube Algorithms{% endblock %}
+
+{% block header_title %}🧩 Cube Algorithms{% endblock %}
+
+{% block content %}
+<div class="cube-page">
+    <!-- Category Tabs -->
+    <div class="cube-tabs" id="cube-tabs">
+        <button class="btn btn-secondary btn-sm" id="add-category-btn" title="Add Category">+ Category</button>
+    </div>
+
+    <!-- Add Category Inline Form (hidden by default) -->
+    <div class="cube-inline-form" id="category-form" style="display: none;">
+        <input type="text" class="form-input" id="category-name-input" placeholder="Category name (e.g. OLL)">
+        <button class="btn btn-primary btn-sm" id="category-save-btn">Save</button>
+        <button class="btn btn-secondary btn-sm" id="category-cancel-btn">Cancel</button>
+    </div>
+
+    <!-- Algorithm List -->
+    <div class="cube-algorithms" id="cube-algorithms">
+        <div class="cube-empty">Select or create a category to get started</div>
+    </div>
+
+    <!-- Add Algorithm Button -->
+    <button class="btn btn-primary cube-add-alg-btn" id="add-alg-btn" style="display: none;">+ Algorithm</button>
+</div>
+
+<!-- Algorithm Modal -->
+<div class="modal-overlay" id="alg-modal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="alg-modal-title">Add Algorithm</h3>
+            <button class="modal-close" id="alg-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-input" id="alg-name" placeholder="e.g. T-perm, Sune">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notation</label>
+                <input type="text" class="form-input form-input-mono" id="alg-notation" placeholder="e.g. R U R' U' R' F R2 U' R' U' R U R' F'">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (optional)</label>
+                <textarea class="form-textarea" id="alg-notes" rows="3" placeholder="Finger tricks, tips..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Image URL (optional)</label>
+                <input type="text" class="form-input" id="alg-image-url" placeholder="https://...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger" id="alg-delete-btn" style="display: none;">Delete</button>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-secondary" id="alg-cancel-btn">Cancel</button>
+            <button class="btn btn-primary" id="alg-save-btn">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Category Edit Modal -->
+<div class="modal-overlay" id="cat-edit-modal" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Edit Category</h3>
+            <button class="modal-close" id="cat-edit-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Name</label>
+                <input type="text" class="form-input" id="cat-edit-name">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-danger" id="cat-delete-btn">Delete Category</button>
+            <div style="flex: 1;"></div>
+            <button class="btn btn-secondary" id="cat-edit-cancel">Cancel</button>
+            <button class="btn btn-primary" id="cat-edit-save">Save</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/cube.js?v=1"></script>
+{% endblock %}

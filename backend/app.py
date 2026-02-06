@@ -8,7 +8,7 @@ import markdown
 
 from .config import get_settings
 from .database.crud import init_db
-from .routes import dashboard_router, todos_router, notes_router, journal_router
+from .routes import dashboard_router, todos_router, notes_router, journal_router, cube_router
 
 settings = get_settings()
 
@@ -60,6 +60,7 @@ app.include_router(dashboard_router, tags=["Dashboard"])
 app.include_router(todos_router, prefix="/api/todos", tags=["Todos"])
 app.include_router(notes_router, prefix="/api/notes", tags=["Notes"])
 app.include_router(journal_router, prefix="/api/journal", tags=["Journal"])
+app.include_router(cube_router, tags=["Cube"])
 
 
 # Health check endpoint

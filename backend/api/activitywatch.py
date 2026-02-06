@@ -274,7 +274,7 @@ class ActivityWatchClient:
 
         for event in events:
             duration = event.get("duration", 0)
-            if duration <= 0:
+            if duration < 1:
                 continue
             status = event.get("data", {}).get("status", "")
             event_time = event.get("timestamp")
@@ -308,8 +308,21 @@ class ActivityWatchClient:
             else:
                 active_intervals.append((ev_start, ev_end))
 
-        afk_seconds = self._merge_and_sum(afk_intervals)
-        active_seconds = self._merge_and_sum(active_intervals)
+        merged_active = self._merge_intervals(active_intervals)
+        merged_afk = self._merge_intervals(afk_intervals)
+
+        # Treat gaps (computer off/asleep) as AFK
+        all_covered = self._merge_intervals(
+            [(s, e) for s, e in merged_active] + [(s, e) for s, e in merged_afk]
+        )
+        now_ts = datetime.now().timestamp()
+        range_end = min(end_ts, now_ts) if end_ts else now_ts
+        range_start = all_covered[0][0] if all_covered else (start_ts or now_ts)
+        gap_intervals = self._find_gaps(all_covered, range_start, range_end)
+        merged_afk = self._merge_intervals(merged_afk + gap_intervals)
+
+        afk_seconds = sum(e - s for s, e in merged_afk)
+        active_seconds = sum(e - s for s, e in merged_active)
 
         return {
             "afk_seconds": afk_seconds,
@@ -356,7 +369,7 @@ class ActivityWatchClient:
 
         for event in events:
             duration = event.get("duration", 0)
-            if duration <= 0:
+            if duration < 1:
                 continue
             status = event.get("data", {}).get("status", "")
             event_time = event.get("timestamp")
@@ -383,14 +396,29 @@ class ActivityWatchClient:
             else:
                 active_intervals.append((ev_start, ev_end))
 
+        merged_active = self._merge_intervals(active_intervals)
+        merged_afk = self._merge_intervals(afk_intervals)
+
+        # Treat gaps (computer off/asleep) as AFK by finding time not
+        # covered by any event between the first event and now
+        all_covered = self._merge_intervals(
+            [(s, e) for s, e in merged_active] + [(s, e) for s, e in merged_afk]
+        )
+        # Clamp the range: from earliest event to min(now, end_ts)
+        now_ts = datetime.now().timestamp()
+        range_end = min(end_ts, now_ts)
+        range_start = all_covered[0][0] if all_covered else start_ts
+        gap_intervals = self._find_gaps(all_covered, range_start, range_end)
+        merged_afk = self._merge_intervals(merged_afk + gap_intervals)
+
         timeline = []
-        for iv_start, iv_end in self._merge_intervals(active_intervals):
+        for iv_start, iv_end in merged_active:
             timeline.append({
                 "status": "active",
                 "time": iv_start,
                 "duration": iv_end - iv_start
             })
-        for iv_start, iv_end in self._merge_intervals(afk_intervals):
+        for iv_start, iv_end in merged_afk:
             timeline.append({
                 "status": "afk",
                 "time": iv_start,
@@ -398,6 +426,29 @@ class ActivityWatchClient:
             })
 
         return timeline
+
+    @staticmethod
+    def _find_gaps(intervals: List[tuple], range_start: float, range_end: float) -> List[tuple]:
+        """Find gaps between merged intervals within a given range."""
+        if not intervals:
+            if range_end > range_start:
+                return [(range_start, range_end)]
+            return []
+        gaps = []
+        sorted_ivs = sorted(intervals, key=lambda x: x[0])
+        # Gap before first interval
+        if sorted_ivs[0][0] > range_start:
+            gaps.append((range_start, sorted_ivs[0][0]))
+        # Gaps between intervals
+        for i in range(1, len(sorted_ivs)):
+            gap_start = sorted_ivs[i - 1][1]
+            gap_end = sorted_ivs[i][0]
+            if gap_end > gap_start:
+                gaps.append((gap_start, gap_end))
+        # Gap after last interval
+        if sorted_ivs[-1][1] < range_end:
+            gaps.append((sorted_ivs[-1][1], range_end))
+        return gaps
 
     @staticmethod
     def _merge_intervals(intervals: List[tuple]) -> List[tuple]:

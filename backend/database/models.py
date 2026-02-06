@@ -99,6 +99,42 @@ class ApiCache(Base):
         return datetime.utcnow() > self.expires_at
 
 
+class CubeCategory(Base):
+    """Category for cube algorithms (e.g. OLL, PLL, F2L)."""
+    __tablename__ = "cube_categories"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False, unique=True)
+    display_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    algorithms = relationship("CubeAlgorithm", back_populates="category", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<CubeCategory(id={self.id}, name='{self.name}')>"
+
+
+class CubeAlgorithm(Base):
+    """A single cube algorithm within a category."""
+    __tablename__ = "cube_algorithms"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    category_id = Column(Integer, ForeignKey("cube_categories.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(255), nullable=False)
+    notation = Column(Text, nullable=False)
+    notes = Column(Text, nullable=True)
+    image_url = Column(String(500), nullable=True)
+    display_order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    category = relationship("CubeCategory", back_populates="algorithms")
+
+    def __repr__(self):
+        return f"<CubeAlgorithm(id={self.id}, name='{self.name}')>"
+
+
 class DashboardLayout(Base):
     """Dashboard layout configuration storage."""
     __tablename__ = "dashboard_layout"

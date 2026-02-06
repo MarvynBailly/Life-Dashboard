@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 
-from .models import Base, Todo, Note, JournalEntry, ApiCache, DashboardLayout
+from .models import Base, Todo, Note, JournalEntry, ApiCache, DashboardLayout, CubeCategory, CubeAlgorithm
 from ..config import get_settings
 
 settings = get_settings()
@@ -244,6 +244,102 @@ def get_journal_streak(db: Session) -> int:
             break
 
     return streak
+
+
+# =============================================================================
+# Cube Category CRUD Operations
+# =============================================================================
+
+def create_cube_category(db: Session, name: str, display_order: int = 0) -> CubeCategory:
+    """Create a new cube category."""
+    category = CubeCategory(name=name, display_order=display_order)
+    db.add(category)
+    db.flush()
+    return category
+
+
+def get_cube_categories(db: Session) -> List[CubeCategory]:
+    """Get all cube categories ordered by display_order."""
+    return db.query(CubeCategory).order_by(CubeCategory.display_order, CubeCategory.id).all()
+
+
+def get_cube_category(db: Session, category_id: int) -> Optional[CubeCategory]:
+    """Get a single cube category by ID."""
+    return db.query(CubeCategory).filter(CubeCategory.id == category_id).first()
+
+
+def update_cube_category(db: Session, category_id: int, **kwargs) -> Optional[CubeCategory]:
+    """Update a cube category."""
+    category = get_cube_category(db, category_id)
+    if category:
+        for key, value in kwargs.items():
+            if hasattr(category, key) and value is not None:
+                setattr(category, key, value)
+        db.flush()
+    return category
+
+
+def delete_cube_category(db: Session, category_id: int) -> bool:
+    """Delete a cube category and its algorithms."""
+    category = get_cube_category(db, category_id)
+    if category:
+        db.delete(category)
+        return True
+    return False
+
+
+# =============================================================================
+# Cube Algorithm CRUD Operations
+# =============================================================================
+
+def create_cube_algorithm(db: Session, category_id: int, name: str, notation: str,
+                          notes: str = None, image_url: str = None,
+                          display_order: int = 0) -> CubeAlgorithm:
+    """Create a new cube algorithm."""
+    algorithm = CubeAlgorithm(
+        category_id=category_id,
+        name=name,
+        notation=notation,
+        notes=notes,
+        image_url=image_url,
+        display_order=display_order
+    )
+    db.add(algorithm)
+    db.flush()
+    return algorithm
+
+
+def get_cube_algorithms(db: Session, category_id: int = None) -> List[CubeAlgorithm]:
+    """Get cube algorithms, optionally filtered by category."""
+    query = db.query(CubeAlgorithm)
+    if category_id:
+        query = query.filter(CubeAlgorithm.category_id == category_id)
+    return query.order_by(CubeAlgorithm.display_order, CubeAlgorithm.id).all()
+
+
+def get_cube_algorithm(db: Session, algorithm_id: int) -> Optional[CubeAlgorithm]:
+    """Get a single cube algorithm by ID."""
+    return db.query(CubeAlgorithm).filter(CubeAlgorithm.id == algorithm_id).first()
+
+
+def update_cube_algorithm(db: Session, algorithm_id: int, **kwargs) -> Optional[CubeAlgorithm]:
+    """Update a cube algorithm."""
+    algorithm = get_cube_algorithm(db, algorithm_id)
+    if algorithm:
+        for key, value in kwargs.items():
+            if hasattr(algorithm, key) and value is not None:
+                setattr(algorithm, key, value)
+        db.flush()
+    return algorithm
+
+
+def delete_cube_algorithm(db: Session, algorithm_id: int) -> bool:
+    """Delete a cube algorithm."""
+    algorithm = get_cube_algorithm(db, algorithm_id)
+    if algorithm:
+        db.delete(algorithm)
+        return True
+    return False
 
 
 # =============================================================================

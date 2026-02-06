@@ -1578,3 +1578,170 @@ a:hover {
   height: 8px;
   border-radius: 50%;
 }
+
+/* ============================================================================
+   Header Navigation
+   ============================================================================ */
+
+.header-nav {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-left: var(--spacing-lg);
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-tertiary);
+}
+
+/* ============================================================================
+   Cube Algorithms Page
+   ============================================================================ */
+
+.cube-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cube-tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-lg);
+}
+
+.cube-tab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cube-tab:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.cube-tab.active {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: white;
+}
+
+.cube-inline-form {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.cube-inline-form .form-input {
+  max-width: 250px;
+  margin-bottom: 0;
+}
+
+.cube-empty {
+  text-align: center;
+  color: var(--text-dim);
+  padding: var(--spacing-xl) 0;
+  font-size: 0.9rem;
+}
+
+.cube-algorithms {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.cube-alg-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-fast);
+}
+
+.cube-alg-card:hover {
+  border-color: var(--border-light);
+  box-shadow: var(--shadow-md);
+}
+
+.cube-alg-image {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  flex-shrink: 0;
+}
+
+.cube-alg-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cube-alg-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.cube-alg-notation {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: var(--accent-teal);
+  background: var(--bg-tertiary);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
+  word-break: break-word;
+}
+
+.cube-alg-notes {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.cube-alg-edit {
+  flex-shrink: 0;
+}
+
+.cube-add-alg-btn {
+  margin-top: var(--spacing-md);
+}
+
+.form-input-mono {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+@media (max-width: 768px) {
+  .cube-alg-card {
+    flex-direction: column;
+  }
+
+  .cube-alg-image {
+    width: 60px;
+    height: 60px;
+  }
+}

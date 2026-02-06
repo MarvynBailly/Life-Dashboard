@@ -137,6 +137,80 @@ class JournalResponse(JournalBase):
 
 
 # =============================================================================
+# Cube Schemas
+# =============================================================================
+
+class CubeCategoryBase(BaseModel):
+    """Base schema for cube categories."""
+    name: str = Field(..., min_length=1, max_length=100)
+    display_order: int = Field(default=0)
+
+
+class CubeCategoryCreate(CubeCategoryBase):
+    """Schema for creating a cube category."""
+    pass
+
+
+class CubeCategoryUpdate(BaseModel):
+    """Schema for updating a cube category."""
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    display_order: Optional[int] = None
+
+
+class CubeAlgorithmBase(BaseModel):
+    """Base schema for cube algorithms."""
+    name: str = Field(..., min_length=1, max_length=255)
+    notation: str = Field(..., min_length=1)
+    notes: Optional[str] = None
+    image_url: Optional[str] = Field(None, max_length=500)
+    display_order: int = Field(default=0)
+
+
+class CubeAlgorithmCreate(CubeAlgorithmBase):
+    """Schema for creating a cube algorithm."""
+    category_id: int
+
+
+class CubeAlgorithmUpdate(BaseModel):
+    """Schema for updating a cube algorithm."""
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    notation: Optional[str] = Field(None, min_length=1)
+    notes: Optional[str] = None
+    image_url: Optional[str] = Field(None, max_length=500)
+    display_order: Optional[int] = None
+    category_id: Optional[int] = None
+
+
+class CubeAlgorithmResponse(BaseModel):
+    """Schema for cube algorithm response."""
+    id: int
+    category_id: int
+    name: str
+    notation: str
+    notes: Optional[str] = None
+    image_url: Optional[str] = None
+    display_order: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CubeCategoryResponse(BaseModel):
+    """Schema for cube category response."""
+    id: int
+    name: str
+    display_order: int
+    created_at: datetime
+    updated_at: datetime
+    algorithms: List[CubeAlgorithmResponse] = Field(default_factory=list)
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
 # Layout Schema
 # =============================================================================
 
