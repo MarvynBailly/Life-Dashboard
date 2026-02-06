@@ -32,6 +32,18 @@ async def dashboard(request: Request):
     })
 
 
+@router.get("/notes", response_class=HTMLResponse)
+async def notes_page(request: Request):
+    """Render the notes & journal page."""
+    return templates.TemplateResponse("notes.html", {"request": request})
+
+
+@router.get("/entertainment", response_class=HTMLResponse)
+async def entertainment_page(request: Request):
+    """Render the entertainment page."""
+    return templates.TemplateResponse("music.html", {"request": request})
+
+
 # =============================================================================
 # Stats Summary Endpoint
 # =============================================================================

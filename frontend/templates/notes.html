@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Notes & Journal{% endblock %}
+
+{% block header_title %}📝 Notes & Journal{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid">
+
+    <!-- Active Tasks -->
+    <div class="card card-full">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">✅</span>
+                Active Tasks
+            </div>
+            <span class="card-subtitle" id="todo-count">0 tasks</span>
+        </div>
+        <div class="card-body">
+            <ul class="todo-list" id="todo-list">
+                <!-- Todos will be loaded here -->
+            </ul>
+            <div class="todo-input-container">
+                <input type="text" class="todo-input" id="todo-input" placeholder="Add a new task...">
+                <button class="btn btn-primary" id="add-todo-btn">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📝</span>
+                Recent Notes
+            </div>
+            <button class="btn btn-secondary btn-icon" id="add-note-btn" title="Add Note">+</button>
+        </div>
+        <div class="card-body">
+            <div class="notes-list" id="notes-list">
+                <!-- Notes will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal -->
+    <div class="card card-half">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="icon">📔</span>
+                Journal
+                <span class="journal-streak-badge" id="journal-streak-badge" title="Day Streak">🔥 <span id="journal-streak-display">0</span></span>
+            </div>
+            <div class="journal-header-actions">
+                <div class="journal-today-indicator" id="journal-today-indicator" style="display: none;">
+                    <span class="indicator-dot warning"></span>
+                    <span>No entry today</span>
+                </div>
+                <button class="btn btn-primary btn-sm" id="write-journal-btn" title="Write Today's Entry">+ Write</button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="journal-list" id="journal-list">
+                <!-- Journal entries will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/notes.js?v=1"></script>
+{% endblock %}
