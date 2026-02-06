@@ -171,12 +171,16 @@ async function loadWakaTimeData(range = 'last_7_days') {
             }
         }
 
-        // Load today's heartbeats for timeline (includes language data)
-        const heartbeatsResponse = await fetch('/api/wakatime/heartbeats');
+        // Load today's heartbeats and ActivityWatch timeline in parallel
+        const [heartbeatsResponse, awTimelineResponse] = await Promise.all([
+            fetch('/api/wakatime/heartbeats'),
+            fetch('/api/activitywatch/timeline').catch(() => null)
+        ]);
         const heartbeats = await heartbeatsResponse.json();
+        const awTimeline = awTimelineResponse ? await awTimelineResponse.json().catch(() => []) : [];
 
-        // Create the timeline visualization
-        createTodayTimeline('timeline-rows', heartbeats);
+        // Create the combined timeline visualization
+        createTodayTimeline('timeline-rows', heartbeats, awTimeline);
 
         // Calculate today's total from heartbeats data
         if (heartbeats && heartbeats.length > 0) {
@@ -196,9 +200,13 @@ async function loadWakaTimeData(range = 'last_7_days') {
  */
 async function loadActivityWatch() {
     try {
-        // Load summary (includes apps and AFK data)
-        const summaryResponse = await fetch('/api/activitywatch/summary?hours=24');
+        // Load summary (today since midnight) and AFK timeline in parallel
+        const [summaryResponse, afkTimelineResponse] = await Promise.all([
+            fetch('/api/activitywatch/summary?today=true'),
+            fetch('/api/activitywatch/afk-timeline').catch(() => null)
+        ]);
         const summary = await summaryResponse.json();
+        const afkTimeline = afkTimelineResponse ? await afkTimelineResponse.json().catch(() => []) : [];
 
         if (summary && !summary.error) {
             // Update app usage chart
@@ -229,6 +237,9 @@ async function loadActivityWatch() {
                 chartContainer.innerHTML = '<div class="text-center text-dim">ActivityWatch not available<br><small>Make sure it\'s running on localhost:5600</small></div>';
             }
         }
+
+        // Render AFK timeline
+        createAfkTimeline('afk-timeline-rows', afkTimeline);
 
     } catch (error) {
         console.error('Error loading ActivityWatch data:', error);
@@ -1304,18 +1315,21 @@ function formatDate(dateString) {
 /**
  * Create a WakaTime-style timeline visualization for today's coding activity
  */
-function createTodayTimeline(containerId, durations) {
+function createTodayTimeline(containerId, durations, awEvents) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // If no data, show empty message
-    if (!durations || durations.length === 0) {
-        container.innerHTML = '<div class="timeline-empty">No coding activity yet today</div>';
+    const hasWakaTime = durations && durations.length > 0;
+    const hasAW = awEvents && awEvents.length > 0;
+
+    // If no data from either source, show empty message
+    if (!hasWakaTime && !hasAW) {
+        container.innerHTML = '<div class="timeline-empty">No activity yet today</div>';
         return;
     }
 
-    // Color palette for languages
-    const colors = [
+    // Color palettes
+    const wakaColors = [
         '#3b82f6', // Blue
         '#8b5cf6', // Purple
         '#14b8a6', // Teal
@@ -1326,67 +1340,121 @@ function createTodayTimeline(containerId, durations) {
         '#06b6d4', // Cyan
     ];
 
-    // Group durations by language and calculate totals
-    const languageData = {};
-    durations.forEach(item => {
-        const lang = item.language || 'Other';
-        if (!languageData[lang]) {
-            languageData[lang] = {
-                totalSeconds: 0,
-                blocks: []
-            };
-        }
-        languageData[lang].totalSeconds += item.duration || 0;
-        languageData[lang].blocks.push({
-            start: item.time,
-            duration: item.duration
-        });
-    });
-
-    // Sort languages by total time (descending)
-    const sortedLanguages = Object.entries(languageData)
-        .sort((a, b) => b[1].totalSeconds - a[1].totalSeconds)
-        .slice(0, 8); // Show top 8 languages
+    const awColors = [
+        '#f97316', // Orange
+        '#ec4899', // Pink
+        '#06b6d4', // Cyan
+        '#eab308', // Yellow
+        '#a855f7', // Violet
+        '#10b981', // Emerald
+        '#f43f5e', // Rose
+        '#84cc16', // Lime
+    ];
 
     // Get today's date boundaries (midnight to midnight)
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
-    const todayEnd = todayStart + 86400; // 24 hours in seconds
 
-    // Build timeline HTML
     let html = '';
-    sortedLanguages.forEach(([lang, data], index) => {
-        const color = colors[index % colors.length];
-        const hours = Math.floor(data.totalSeconds / 3600);
-        const minutes = Math.floor((data.totalSeconds % 3600) / 60);
-        const timeStr = hours > 0 ? `${hours}:${minutes.toString().padStart(2, '0')}` : `${minutes}:00`;
 
-        html += `
-            <div class="timeline-row">
-                <div class="timeline-label">
-                    <span class="timeline-label-name" title="${escapeHtml(lang)}">${escapeHtml(lang)}</span>
-                    <span class="timeline-label-time">${timeStr}</span>
+    // Helper to build timeline rows for a grouped dataset
+    function buildTimelineRows(groupedData, colors, maxRows) {
+        let rowsHtml = '';
+        const sorted = Object.entries(groupedData)
+            .sort((a, b) => b[1].totalSeconds - a[1].totalSeconds)
+            .slice(0, maxRows);
+
+        sorted.forEach(([name, data], index) => {
+            const color = colors[index % colors.length];
+            const hours = Math.floor(data.totalSeconds / 3600);
+            const minutes = Math.floor((data.totalSeconds % 3600) / 60);
+            const timeStr = hours > 0 ? `${hours}:${minutes.toString().padStart(2, '0')}` : `${minutes}m`;
+
+            rowsHtml += `
+                <div class="timeline-row">
+                    <div class="timeline-label">
+                        <span class="timeline-label-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+                        <span class="timeline-label-time">${timeStr}</span>
+                    </div>
+                    <div class="timeline-track">
+            `;
+
+            data.blocks.forEach(block => {
+                const startPercent = Math.max(0, ((block.start - todayStart) / 86400) * 100);
+                const widthPercent = Math.max(0.5, (block.duration / 86400) * 100);
+
+                if (startPercent < 100 && startPercent >= 0) {
+                    rowsHtml += `<div class="timeline-block" style="left: ${startPercent}%; width: ${widthPercent}%; background-color: ${color};" title="${escapeHtml(name)}: ${formatTimelineTooltip(block.start, block.duration)}"></div>`;
+                }
+            });
+
+            rowsHtml += `
+                    </div>
                 </div>
-                <div class="timeline-track">
-        `;
+            `;
+        });
+        return rowsHtml;
+    }
 
-        // Add blocks for each coding session
-        data.blocks.forEach(block => {
-            // Calculate position as percentage of day
-            const startPercent = Math.max(0, ((block.start - todayStart) / 86400) * 100);
-            const widthPercent = Math.max(0.5, (block.duration / 86400) * 100); // Min 0.5% width for visibility
+    // Clean up app names (strip .exe, prettify known apps)
+    function cleanAppName(raw) {
+        let name = raw.replace(/\.exe$/i, '');
+        const prettyNames = {
+            'Code': 'VS Code',
+            'WindowsTerminal': 'Terminal',
+            'vivaldi': 'Vivaldi',
+            'firefox': 'Firefox',
+            'chrome': 'Chrome',
+            'explorer': 'Explorer',
+            'Spotify': 'Spotify',
+            'slack': 'Slack',
+            'Discord': 'Discord',
+            'SnippingTool': 'Snipping Tool',
+            'Obsidian': 'Obsidian',
+        };
+        return prettyNames[name] || name;
+    }
 
-            // Only show blocks that fall within today
-            if (startPercent < 100 && startPercent >= 0) {
-                html += `<div class="timeline-block" style="left: ${startPercent}%; width: ${widthPercent}%; background-color: ${color};" title="${escapeHtml(lang)}: ${formatTimelineTooltip(block.start, block.duration)}"></div>`;
+    // --- ActivityWatch: Apps section ---
+    if (hasAW) {
+        const appData = {};
+        awEvents.forEach(item => {
+            const app = cleanAppName(item.app || 'Unknown');
+            if (!appData[app]) {
+                appData[app] = { totalSeconds: 0, blocks: [] };
             }
+            appData[app].totalSeconds += item.duration || 0;
+            appData[app].blocks.push({
+                start: item.time,
+                duration: item.duration
+            });
         });
 
-        html += `
-                </div>
-            </div>
-        `;
-    });
+        html += '<div class="timeline-section-label">Apps</div>';
+        html += buildTimelineRows(appData, awColors, 8);
+    }
+
+    // --- WakaTime: Languages section ---
+    if (hasWakaTime) {
+        const languageData = {};
+        durations.forEach(item => {
+            const lang = item.language || 'Other';
+            if (!languageData[lang]) {
+                languageData[lang] = { totalSeconds: 0, blocks: [] };
+            }
+            languageData[lang].totalSeconds += item.duration || 0;
+            languageData[lang].blocks.push({
+                start: item.time,
+                duration: item.duration
+            });
+        });
+
+        if (hasAW) {
+            html += '<div class="timeline-section-divider"></div>';
+        }
+        html += '<div class="timeline-section-label">Languages</div>';
+        html += buildTimelineRows(languageData, wakaColors, 8);
+    }
 
     container.innerHTML = html;
 }
@@ -1406,4 +1474,68 @@ function formatTimelineTooltip(startTimestamp, durationSeconds) {
     const durStr = durMins >= 60 ? `${Math.floor(durMins / 60)}h ${durMins % 60}m` : `${durMins}m`;
 
     return `${startTime} (${durStr})`;
+}
+
+/**
+ * Create a single-track timeline visualization for AFK/Active periods.
+ * Both active (green) and AFK (yellow) blocks are rendered on one track,
+ * with a label row showing totals for each.
+ */
+function createAfkTimeline(containerId, events) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    if (!events || events.length === 0) {
+        container.innerHTML = '<div class="timeline-empty">No data yet today</div>';
+        return;
+    }
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() / 1000;
+
+    // Calculate totals per status
+    let activeTotal = 0, afkTotal = 0;
+    events.forEach(e => {
+        if (e.status === 'afk') afkTotal += e.duration;
+        else activeTotal += e.duration;
+    });
+
+    function fmtDur(s) {
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        return h > 0 ? `${h}:${m.toString().padStart(2, '0')}` : `${m}m`;
+    }
+
+    // Build single-track timeline with both statuses on one row
+    let html = `
+        <div class="timeline-row">
+            <div class="timeline-label">
+                <span class="timeline-label-name">Activity</span>
+            </div>
+            <div class="timeline-track">
+    `;
+
+    // Sort all events by time and render on one track
+    const sorted = [...events].sort((a, b) => a.time - b.time);
+    sorted.forEach(e => {
+        const color = e.status === 'afk' ? 'var(--accent-yellow)' : 'var(--accent-green)';
+        const label = e.status === 'afk' ? 'AFK' : 'Active';
+        const startPercent = Math.max(0, ((e.time - todayStart) / 86400) * 100);
+        const widthPercent = Math.max(0.15, (e.duration / 86400) * 100);
+
+        if (startPercent < 100 && startPercent >= 0) {
+            html += `<div class="timeline-block" style="left: ${startPercent}%; width: ${widthPercent}%; background-color: ${color};" title="${label}: ${formatTimelineTooltip(e.time, e.duration)}"></div>`;
+        }
+    });
+
+    html += `
+            </div>
+        </div>
+        <div class="afk-timeline-legend">
+            <span class="legend-item"><span class="legend-dot" style="background: var(--accent-green);"></span> Active ${fmtDur(activeTotal)}</span>
+            <span class="legend-item"><span class="legend-dot" style="background: var(--accent-yellow);"></span> AFK ${fmtDur(afkTotal)}</span>
+        </div>
+    `;
+
+    container.innerHTML = html;
 }

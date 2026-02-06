@@ -147,19 +147,76 @@ async def get_wakatime_heartbeats(date_str: Optional[str] = Query(None, alias="d
 # =============================================================================
 
 @router.get("/api/activitywatch/summary")
-async def get_activitywatch_summary(hours: int = Query(24, ge=1, le=168)):
-    """Get ActivityWatch activity summary."""
+async def get_activitywatch_summary(
+    hours: Optional[int] = Query(None, ge=1, le=168),
+    today: bool = Query(False)
+):
+    """Get ActivityWatch activity summary. Use today=true for since-midnight."""
     client = ActivityWatchClient()
     try:
         end = datetime.now()
-        start = end - timedelta(hours=hours)
+        if today:
+            start = end.replace(hour=0, minute=0, second=0, microsecond=0)
+            cache_key = f"summary_today_{end.strftime('%Y-%m-%d')}"
+        else:
+            h = hours or 24
+            start = end - timedelta(hours=h)
+            cache_key = f"summary_{h}h"
 
         summary = await get_cached_or_fetch(
-            "activitywatch", f"summary_{hours}h",
+            "activitywatch", cache_key,
             lambda: client.get_productivity_summary(start, end),
             ttl_seconds=settings.cache_ttl_seconds
         )
         return summary or {"error": "Unable to fetch ActivityWatch data"}
+    finally:
+        await client.close()
+
+
+@router.get("/api/activitywatch/afk-timeline")
+async def get_activitywatch_afk_timeline(date_str: Optional[str] = Query(None, alias="date")):
+    """Get merged AFK/active intervals for timeline visualization (default: today)."""
+    client = ActivityWatchClient()
+    try:
+        if date_str:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d")
+        else:
+            target_date = datetime.now()
+
+        start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        cache_key = f"afk_timeline_{target_date.strftime('%Y-%m-%d')}"
+
+        timeline = await get_cached_or_fetch(
+            "activitywatch", cache_key,
+            lambda: client.get_afk_timeline(start, end),
+            ttl_seconds=settings.cache_ttl_seconds
+        )
+        return timeline or []
+    finally:
+        await client.close()
+
+
+@router.get("/api/activitywatch/timeline")
+async def get_activitywatch_timeline(date_str: Optional[str] = Query(None, alias="date")):
+    """Get ActivityWatch window events for timeline visualization (default: today)."""
+    client = ActivityWatchClient()
+    try:
+        if date_str:
+            target_date = datetime.strptime(date_str, "%Y-%m-%d")
+        else:
+            target_date = datetime.now()
+
+        start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + timedelta(days=1)
+        cache_key = f"timeline_{target_date.strftime('%Y-%m-%d')}"
+
+        timeline = await get_cached_or_fetch(
+            "activitywatch", cache_key,
+            lambda: client.get_timeline_events(start, end),
+            ttl_seconds=settings.cache_ttl_seconds
+        )
+        return timeline or []
     finally:
         await client.close()
 

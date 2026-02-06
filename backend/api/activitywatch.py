@@ -158,6 +158,66 @@ class ActivityWatchClient:
             return self._calculate_afk_stats(events, start, end)
         return None
 
+    async def get_timeline_events(self, start: datetime = None,
+                                    end: datetime = None) -> Optional[List]:
+        """
+        Get raw window events for timeline visualization.
+
+        Returns events with app name, start timestamp (unix), and duration,
+        grouped by app and suitable for the Today's Breakdown timeline.
+        """
+        if not start:
+            start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        if not end:
+            end = datetime.now()
+
+        buckets = await self.get_buckets()
+        if not buckets:
+            return None
+
+        window_bucket = None
+        for bucket_id in buckets:
+            if "aw-watcher-window" in bucket_id:
+                window_bucket = bucket_id
+                break
+
+        if not window_bucket:
+            return None
+
+        events = await self.get_events(window_bucket, start, end)
+        if not events:
+            return None
+
+        # Convert events to timeline format: {app, time (unix), duration (seconds)}
+        timeline = []
+        for event in events:
+            app = event.get("data", {}).get("app", "Unknown")
+            duration = event.get("duration", 0)
+            timestamp = event.get("timestamp")
+
+            if not timestamp or duration < 1:
+                continue
+
+            # Parse ISO timestamp to unix
+            try:
+                if isinstance(timestamp, str):
+                    timestamp = timestamp.replace("Z", "+00:00")
+                    from datetime import timezone
+                    event_dt = datetime.fromisoformat(timestamp)
+                    unix_ts = event_dt.timestamp()
+                else:
+                    unix_ts = timestamp
+            except (ValueError, TypeError):
+                continue
+
+            timeline.append({
+                "app": app,
+                "time": unix_ts,
+                "duration": duration
+            })
+
+        return timeline
+
     async def get_productivity_summary(self, start: datetime = None,
                                         end: datetime = None) -> Optional[Dict]:
         """
@@ -204,46 +264,52 @@ class ActivityWatchClient:
         }
 
     def _calculate_afk_stats(self, events: List, start: datetime = None, end: datetime = None) -> Dict:
-        """Calculate AFK statistics from events, clipping to time range."""
-        afk_seconds = 0
-        active_seconds = 0
-
-        # Convert to timestamps for comparison
+        """Calculate AFK statistics from events, merging overlaps and clipping to time range."""
         start_ts = start.timestamp() if start else None
         end_ts = end.timestamp() if end else None
 
+        # Parse events into (start_epoch, end_epoch, status) and clip to range
+        afk_intervals = []
+        active_intervals = []
+
         for event in events:
             duration = event.get("duration", 0)
+            if duration <= 0:
+                continue
             status = event.get("data", {}).get("status", "")
-
-            # Get event timestamp and parse it
             event_time = event.get("timestamp")
-            if event_time:
-                try:
-                    # Parse ISO format timestamp
-                    if isinstance(event_time, str):
-                        # Handle various ISO formats
-                        event_time = event_time.replace("Z", "+00:00")
-                        from datetime import timezone
-                        event_dt = datetime.fromisoformat(event_time)
-                        event_ts = event_dt.timestamp()
-                    else:
-                        event_ts = event_time
+            if not event_time:
+                continue
 
-                    event_end_ts = event_ts + duration
+            try:
+                if isinstance(event_time, str):
+                    event_time = event_time.replace("Z", "+00:00")
+                    event_dt = datetime.fromisoformat(event_time)
+                    event_ts = event_dt.timestamp()
+                else:
+                    event_ts = event_time
+            except (ValueError, TypeError):
+                continue
 
-                    # Clip event to query time range
-                    if start_ts and end_ts:
-                        clipped_start = max(event_ts, start_ts)
-                        clipped_end = min(event_end_ts, end_ts)
-                        duration = max(0, clipped_end - clipped_start)
-                except (ValueError, TypeError):
-                    pass  # Use original duration if parsing fails
+            ev_start = event_ts
+            ev_end = event_ts + duration
+
+            # Clip to query range
+            if start_ts is not None:
+                ev_start = max(ev_start, start_ts)
+            if end_ts is not None:
+                ev_end = min(ev_end, end_ts)
+
+            if ev_end <= ev_start:
+                continue
 
             if status == "afk":
-                afk_seconds += duration
+                afk_intervals.append((ev_start, ev_end))
             else:
-                active_seconds += duration
+                active_intervals.append((ev_start, ev_end))
+
+        afk_seconds = self._merge_and_sum(afk_intervals)
+        active_seconds = self._merge_and_sum(active_intervals)
 
         return {
             "afk_seconds": afk_seconds,
@@ -251,6 +317,121 @@ class ActivityWatchClient:
             "afk_text": self._format_duration(afk_seconds),
             "active_text": self._format_duration(active_seconds)
         }
+
+    async def get_afk_timeline(self, start: datetime = None,
+                                end: datetime = None) -> Optional[List]:
+        """
+        Get merged AFK/active intervals for timeline visualization.
+
+        Returns list of {status, time (unix), duration (seconds)} with
+        overlapping events already merged.
+        """
+        if not start:
+            start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        if not end:
+            end = datetime.now()
+
+        buckets = await self.get_buckets()
+        if not buckets:
+            return None
+
+        afk_bucket = None
+        for bucket_id in buckets:
+            if "aw-watcher-afk" in bucket_id:
+                afk_bucket = bucket_id
+                break
+
+        if not afk_bucket:
+            return None
+
+        events = await self.get_events(afk_bucket, start, end)
+        if not events:
+            return None
+
+        start_ts = start.timestamp()
+        end_ts = end.timestamp()
+
+        afk_intervals = []
+        active_intervals = []
+
+        for event in events:
+            duration = event.get("duration", 0)
+            if duration <= 0:
+                continue
+            status = event.get("data", {}).get("status", "")
+            event_time = event.get("timestamp")
+            if not event_time:
+                continue
+
+            try:
+                if isinstance(event_time, str):
+                    event_time = event_time.replace("Z", "+00:00")
+                    event_dt = datetime.fromisoformat(event_time)
+                    event_ts = event_dt.timestamp()
+                else:
+                    event_ts = event_time
+            except (ValueError, TypeError):
+                continue
+
+            ev_start = max(event_ts, start_ts)
+            ev_end = min(event_ts + duration, end_ts)
+            if ev_end <= ev_start:
+                continue
+
+            if status == "afk":
+                afk_intervals.append((ev_start, ev_end))
+            else:
+                active_intervals.append((ev_start, ev_end))
+
+        timeline = []
+        for iv_start, iv_end in self._merge_intervals(active_intervals):
+            timeline.append({
+                "status": "active",
+                "time": iv_start,
+                "duration": iv_end - iv_start
+            })
+        for iv_start, iv_end in self._merge_intervals(afk_intervals):
+            timeline.append({
+                "status": "afk",
+                "time": iv_start,
+                "duration": iv_end - iv_start
+            })
+
+        return timeline
+
+    @staticmethod
+    def _merge_intervals(intervals: List[tuple]) -> List[tuple]:
+        """Merge overlapping intervals and return the merged list."""
+        if not intervals:
+            return []
+        intervals.sort(key=lambda x: x[0])
+        merged = []
+        cur_start, cur_end = intervals[0]
+        for start, end in intervals[1:]:
+            if start <= cur_end:
+                cur_end = max(cur_end, end)
+            else:
+                merged.append((cur_start, cur_end))
+                cur_start, cur_end = start, end
+        merged.append((cur_start, cur_end))
+        return merged
+
+    @staticmethod
+    def _merge_and_sum(intervals: List[tuple]) -> float:
+        """Merge overlapping intervals and return total duration in seconds."""
+        if not intervals:
+            return 0.0
+        intervals.sort(key=lambda x: x[0])
+        merged_total = 0.0
+        cur_start, cur_end = intervals[0]
+        for start, end in intervals[1:]:
+            if start <= cur_end:
+                cur_end = max(cur_end, end)
+            else:
+                merged_total += cur_end - cur_start
+                cur_start, cur_end = start, end
+        merged_total += cur_end - cur_start
+        return merged_total
 
     def _format_duration(self, seconds: float) -> str:
         """Format seconds as human-readable duration."""

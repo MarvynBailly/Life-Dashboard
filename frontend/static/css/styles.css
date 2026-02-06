@@ -746,11 +746,33 @@ a:hover {
   opacity: 1;
 }
 
+.timeline-section-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--spacing-xs) 0;
+}
+
+.timeline-section-divider {
+  border-top: 1px solid var(--border-color);
+  margin: var(--spacing-xs) 0;
+}
+
 .timeline-empty {
   color: var(--text-dim);
   font-size: 0.85rem;
   text-align: center;
   padding: var(--spacing-lg);
+}
+
+.afk-timeline-legend {
+  display: flex;
+  gap: var(--spacing-md);
+  padding-left: 100px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: var(--spacing-xs);
 }
 
 /* ============================================================================
